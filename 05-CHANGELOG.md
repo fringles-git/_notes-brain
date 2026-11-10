@@ -89,3 +89,16 @@
 - Dock sans icônes (libellés seuls) : choix visuel laissé au propriétaire. Page active non persistée, pas d'URL ni de routeur : rechargement = retour sur Notes.
 - CI GitHub Actions verte sur `128050c` (run 3, push sur `main`).
 - Non vérifié : hash de build en ligne (aucun déploiement), aucun test sur appareil réel.
+
+## 2026-11-10 : éditeur Tiptap dans mindspace-core
+
+- `mindspace-core` commit `93b4701` poussé directement sur `main` sur ordre explicite : `src/ui/NoteEditor.tsx`, `EditorToolbar.tsx`, `editorExtensions.ts`, `draftStore.ts`, `editor.css`, tokens de pile basse, 9 tests ajoutés.
+- Dépendances ajoutées : `@tiptap/react`, `starter-kit`, `extension-placeholder` (demandées) plus `@tiptap/core` et `@tiptap/pm` (pairs obligatoires), tous en 3.33.1.
+- Redondance vérifiée : `MindSpace` possède déjà un éditeur Tiptap + Yjs (`Editor.tsx`, `EditorToolbar.tsx`), couplé à Tailwind et lucide-react. Pas de copie. Patterns repris : `role="toolbar"`, `aria-pressed`, `preventDefault` au mousedown, titres 1 à 3.
+- Exception à la décision 6, demandée par le propriétaire : contenu de note dans Zustand via un store séparé de `useUi`, en mémoire, brouillon unique, à supprimer au branchement Yjs. Documentée dans `CLAUDE.md` et `03`.
+- Lien Tiptap désactivé (`link: false`) : aucune UI de lien, règle http(s) et mailto non implémentée.
+- Vérifié en local (Node 24.22.1) : `tsc --noEmit`, 35 tests, `vite build`. Chromium 390 et 360 px : 7 cibles de 44 px, un seul arrêt de tabulation, flèches / Début / Fin, formats appliqués, contenu restauré après changement de page, aucune erreur console.
+- Bundle : un seul chunk JS de 626,6 Ko (197,3 Ko gzip), avertissement Vite au-delà de 500 Ko. Aucune scission du code.
+- Non vérifié : clavier virtuel mobile (la barre fixe et le dock peuvent passer sous le clavier), appareil réel, hash de build en ligne (aucun déploiement).
+- Décisions visuelles en attente du propriétaire : emplacement de la barre d'outils (îlot fixe au-dessus du dock), anneau de focus sur toute la zone d'édition, échelle typographique, libellés textuels sans icônes.
+- Dependabot actif sur `mindspace-core` (PR #2) : premières exécutions en file d'attente, PR de mises à jour attendues.

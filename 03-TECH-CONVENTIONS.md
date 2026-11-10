@@ -234,7 +234,7 @@ Ordre conseillé : scan de secrets, correction de la licence, vérification de l
 | 3 | État | Zustand. |
 | 4 | Node.js | 24. |
 | 5 | CSS | Natif, approche utilitaire "à la Tailwind" : classes écrites à la main, zéro dépendance. |
-| 6 | Frontière des données (2026-11-10) | Yjs : contenu des notes (texte, blocs). Dexie : métadonnées (titres, dates, tags) et pièces jointes. Zustand : état d'UI seulement (navigation, modales, thème). |
+| 6 | Frontière des données (2026-11-10) | Yjs : contenu des notes (texte, blocs). Dexie : métadonnées (titres, dates, tags) et pièces jointes. Zustand : état d'UI seulement (navigation, modales, thème). Exception temporaire (2026-11-10, demandée par le propriétaire) : `mindspace-core/src/ui/draftStore.ts` garde le JSON Tiptap d'un brouillon en mémoire jusqu'au branchement de Yjs et Dexie. |
 | 7 | Chiffrement (2026-11-10) | `crypt.ts` conservé tel que porté : nonce compteur, clé par fichier, HKDF. Phrase de 128 bits (28 signes). Vocabulaire public : "Chiffrement AES-GCM", jamais "AES-256". |
 | 8 | CI (2026-11-10) | GitHub Actions `ci.yml` : `npm ci`, `tsc --noEmit`, `npm test`, `vite build`, sur chaque PR et push `main` (`mindspace-core`). |
 
