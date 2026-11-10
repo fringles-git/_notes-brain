@@ -77,3 +77,15 @@
 - `03` section 11 : décisions 6 à 8 ajoutées, "frontière non spécifiée" remplacée.
 - Alerte ouverte : le miroir du contenu Yjs dans Dexie (`editorJson`, `body`) n'a ni format ni règle de resynchronisation. Bloque recherche, aperçus de liste, export.
 - Non vérifié : statut CI de `mindspace-core#1` (première exécution du workflow).
+
+## 2026-11-10 : UI Shell de mindspace-core
+
+- `mindspace-core` commit `128050c` poussé directement sur `main` sur ordre explicite : `src/ui/` (Dock, NotesList, Tasks, Settings, `store.ts`, `tokens.css`, `ui.css`), `src/App.tsx` réécrit, `tests/ui-store.test.ts`.
+- Zustand utilisé : `currentPage` (`notes`, `tasks`, `settings`), état d'UI seulement (décision 6).
+- Vérifié en local (Node 24.22.1) : `tsc --noEmit`, 28 tests, `vite build`, `npm run dev`. Rendu Chromium 390 px, clair et sombre : 3 cibles de 44 px de haut, navigation et `aria-current` corrects, aucune erreur console.
+- Contrastes calculés des placeholders : texte atténué 6,35:1 (clair) et 7,00:1 (sombre) ; texte sur accent 10,60:1.
+- Choix de convention posés par le code, à valider (le cerveau les disait non spécifiés) : préfixe de classes `ms-`, éléments `ms-bloc__element`, utilitaire `ms-glass`, jetons `--ms-*` dont l'échelle `--ms-z-*`. Hex et z-index numériques confinés à `src/ui/tokens.css`.
+- Couleurs de `tokens.css` : valeurs provisoires reprises de la palette MindSpace (`02` section 3). Décision visuelle du propriétaire en attente.
+- Dock sans icônes (libellés seuls) : choix visuel laissé au propriétaire. Page active non persistée, pas d'URL ni de routeur : rechargement = retour sur Notes.
+- CI GitHub Actions verte sur `128050c` (run 3, push sur `main`).
+- Non vérifié : hash de build en ligne (aucun déploiement), aucun test sur appareil réel.
