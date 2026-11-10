@@ -25,3 +25,16 @@
 ### Non vérifié
 - Hash de build en ligne, statut CI : non applicable au repo brain (aucun workflow).
 - Lockfiles, exécution des tests et des apps.
+
+## 2026-11-10 : suites de l'audit
+
+- PR `fringles-git/_notes-brain#1` mergée. `MindSpace#48` mergée : `LICENSE` All Rights Reserved, titulaire Brandon Lazarre, mentions MIT publiques alignées. Build Hostinger `01a1c55e` (version 6.11.10-1) `completed` sur `c7c61a1`. Page `legal.html` en ligne non relue (proxy de session bloqué).
+- Alertes closes : `MindSpace/LICENSE` MIT, titulaire du copyright.
+- Décisions d'architecture validées (`03`, section 11) :
+  1. CalVer `y.m.d-n`, exemple `6.11.10-3`. Pas de SemVer.
+  2. `skipWaiting` automatique, risque de conflit d'onglet accepté.
+  3. Zustand.
+  4. Node.js 24.
+  5. CSS natif, approche utilitaire écrite à la main, zéro dépendance.
+- Non spécifié, à écrire avant le code : frontière Zustand / Dexie / Yjs ; convention de nommage des classes utilitaires ; relevé d'usage de Tailwind avant retrait ; collision de décennie du `y` en 2036.
+- Alertes restantes : passage en privé de 5 repos (action manuelle), scan de secrets, fichiers permutés de `notepad-pwa` et `notes-svelte`.
