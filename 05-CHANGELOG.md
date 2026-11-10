@@ -87,4 +87,5 @@
 - Choix de convention posés par le code, à valider (le cerveau les disait non spécifiés) : préfixe de classes `ms-`, éléments `ms-bloc__element`, utilitaire `ms-glass`, jetons `--ms-*` dont l'échelle `--ms-z-*`. Hex et z-index numériques confinés à `src/ui/tokens.css`.
 - Couleurs de `tokens.css` : valeurs provisoires reprises de la palette MindSpace (`02` section 3). Décision visuelle du propriétaire en attente.
 - Dock sans icônes (libellés seuls) : choix visuel laissé au propriétaire. Page active non persistée, pas d'URL ni de routeur : rechargement = retour sur Notes.
-- Non vérifié : statut CI du commit `128050c` (voir PR), hash de build en ligne (aucun déploiement), aucun test sur appareil réel.
+- CI GitHub Actions verte sur `128050c` (run 3, push sur `main`).
+- Non vérifié : hash de build en ligne (aucun déploiement), aucun test sur appareil réel.
