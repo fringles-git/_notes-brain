@@ -2,6 +2,20 @@
 
 Source : audit des 9 repos (voir `00-INDEX.md`). Aucun prix, palier, plan ou métrique d'usage n'est documenté dans aucun repo. Tout chiffre de revenu ci-dessous serait une supposition : aucun n'est donné. Les jugements sont marqués `analyse`.
 
+## 0. Décisions du propriétaire (2026-11-10)
+
+1. Local : 100 % gratuit, sans compte (souveraineté).
+2. Compte requis pour deux familles : Cloud (sync E2E, collaboration) et API à l'usage (IA, OCR avancé, traitement lourd). Modèle : abonnement infrastructure et/ou paiement à l'usage.
+3. Référence métier : `notes-v3`. Référence UI, Tiptap, Yjs : `MindSpace`.
+4. Licence : propriétaire, All Rights Reserved, produit commercial.
+5. Architecture MRR prévue dès maintenant. Aucun repo ne contient aujourd'hui compte, authentification, facturation, quotas ni passerelle d'API (`02`, section 1.8).
+
+Conséquences relevées (analyse) :
+- `MindSpace/LICENSE` est MIT : à remplacer. Voir `02`, section 9.
+- OCR et Whisper locaux sont déjà livrés gratuits (v3, v5, aistudio). L'offre API doit vendre une qualité ou une vitesse que le local ne donne pas, sans quoi le palier A cannibalise le local.
+- Le palier A est le seul à coût marginal variable : prévoir quotas, plafonds et mesure d'usage avant le premier appel d'API.
+- Le chiffrement E2E contraint l'IA côté serveur : tout traitement IA sur une note exige que le client envoie le contenu en clair (ou un extrait). Il faut un consentement explicite par requête, pour ne pas contredire "souveraineté".
+
 ## 1. Verdict produit
 
 - Revenu actuel : zéro. 112 PR, aucune ne touche à un modèle économique.
@@ -99,6 +113,8 @@ Règle : avant d'écrire une fonction, la chercher ici. Porter plutôt que réé
 - Décisions visuelles (looks, couleurs, disposition) : à vous. Rien dans ce fichier n'en propose.
 
 ## 9. Questions ouvertes pour vous
+
+Questions 1 à 3 tranchées le 2026-11-10 (section 0). Restent ouvertes :
 
 1. Compte facultatif acceptable malgré "sans compte" ?
 2. Repo de base : `MindSpace` ou `notes-v3` ?

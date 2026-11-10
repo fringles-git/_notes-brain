@@ -174,7 +174,7 @@ Contradictions documentaires : `docs/pwa-baseline.md` (v3, AI) dit "network-firs
 
 | Élément | Résultat | Raison documentée |
 |---|---|---|
-| `notes-v3` #19 : assets hachés cache-first, `.htaccess` immutable | Fermée sans merge, 19 s après #21, `dirty` | `non documentée` ; la fonction n'est pas dans `main` ; la PR fixait "Lighthouse en CI" (D) |
+| `notes-v3` #19 : assets hachés cache-first, `.htaccess` immutable | Fermée sans merge, 19 s après #21, `dirty` | `non documentée` ; la fonction n'est pas dans `main` |
 | `MindSpace` #43 (import Markdown structuré) puis #44 (revert) | Revert mergé 2 min après | `non documentée` ; #43 disait Playwright non exécuté ; `markdownImport.ts` (180 lignes) supprimé ; `changelogData.ts` annonce encore la fonction |
 | `MindSpace` #19 BlockNote vers #21 Tiptap | Remplacé | "BlockNote menus conflict with Tailwind and virtual keyboards" ; `blocksJson` conservé pour le rollback |
 | `MindSpace` #30, #6 | Fermées à la main | `non documentée` |
@@ -184,7 +184,7 @@ Contradictions documentaires : `docs/pwa-baseline.md` (v3, AI) dit "network-firs
 | `notes-v3` : Web Speech API, MiniSearch / FlexSearch, merge par horloge, PIN pour l'export masqué | Refusés | audio vers serveur ; inutiles ; vecteurs de version ; PIN contournable hors ligne |
 | `notes-v5` : TanStack Start / Nitro, `spa:{}`, y-dexie, comark-tiptap, ancien import JSON | Retirés ou non retenus | hydratation React #418 ; périmètre |
 | `notes-v6` : Dexie / idb, Web Worker, i18n, sync | Reportés | "prématuré" (`docs/architecture-audit.md`) |
-| `MindSpace` : copie du code `notes-v3` | Refusée en #8 / recherche | pas de LICENSE trouvé à l'époque (voir section 9) |
+| `MindSpace` : copie du code `notes-v3` et `notes-v5` | Refusée, recherche réécrite (#45) | pas de LICENSE trouvé (`docs/notes-search-integration-2026-11-07.md`, voir section 9) |
 | `brandonlazarre` #2 : second gestionnaire clavier de `notes-pwa` | Écarté | doublon avec `gestures.ts` ; touche N ouvrait le menu Créer |
 | Actions `startup_failure` sur 25 exécutions (`brandonlazarre`) | Non résolu | cause externe au YAML |
 | `notes-4` : 5 commits à fichiers mal placés | Corrigé par #1 | build Hostinger rouge jusqu'au correctif |
@@ -219,7 +219,7 @@ Incompatibilité de modèle (analyse) : v3 stocke des notes Markdown comme objet
 - `MindSpace/LICENSE` : MIT, "Copyright (c) 2026 MindSpace contributors" (PR #5). Contradiction directe. Le repo est privé. Toute copie déjà distribuée sous MIT reste sous MIT.
 - `notes-v3`, `notes-v5` : aucun fichier LICENSE. Sans licence, le droit d'auteur par défaut réserve les droits. `notes-v5` est public : code lisible, non réutilisable.
 - Repos publics : `notepad-pwa`, `notes-svelte`, `notes-4`, `brandonlazarre`, `notes-v5`. `notepad-pwa/LICENSE` contient le texte du README ("License: MIT"), pas une licence valide.
-- Obstacle de porter v3 vers MS levé par le propriétaire : MS #8 / recherche avait réécrit la fonction faute de LICENSE. Le même auteur peut désormais réutiliser son code.
+- Obstacle de porter v3 vers MS levé par le propriétaire : MS #45 avait réécrit la recherche faute de LICENSE (`docs/notes-search-integration-2026-11-07.md`). Le même auteur peut désormais réutiliser son code.
 - Mentions tierces à conserver dans un produit commercial : crédits des bibliothèques (changelog `CREDITS` v3 : pdf.js, Tesseract, PptxGenJS, Whisper/Transformers). Leurs licences propres restent à vérifier, `non documenté`.
 
 ## 10. Questions ouvertes

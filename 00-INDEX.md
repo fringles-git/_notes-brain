@@ -9,7 +9,7 @@ Statuts utilisés partout : `shipped`, `experimental`, `described only`. Champ i
 |---|---|---|
 | `00-INDEX.md` | Carte des repos, branches, PR, alertes. | écrit |
 | `01-BUSINESS-AND-VISION.md` | MRR, freemium, killer features, personas, doublons à rejeter. | écrit |
-| `02-FEATURES-AND-ARCHAEOLOGY.md` | Matrice features, UI/UX, navigation, PWA, rejets. | à venir (étape 2) |
+| `02-FEATURES-AND-ARCHAEOLOGY.md` | Matrice features, UI/UX, navigation, PWA, rejets, plan de portage, licence. | écrit |
 | `03-TECH-CONVENTIONS.md` | Nommage, architecture, paquets, dette, CI. | à venir (étape 3) |
 | `05-CHANGELOG.md` | Journal de session. | créé en fin de cycle |
 
@@ -73,7 +73,7 @@ Total PR : 112.
 2. `notes-svelte` HEAD : `+layout.svelte` et `+page.svelte` apparemment permutés. Import `lucide-svelte` au lieu de `@lucide/svelte`.
 3. `notes-4` : l'écriture de fichiers sur de mauvais chemins a cassé chaque build Hostinger jusqu'à la PR #1.
 4. `MindSpace` : `changelogData.ts` annonce toujours l'import Markdown retiré par #44. `DISCOVERABILITY.md` périmé (dit qu'aucun MCP n'existe). `dependabot.yml` référence encore BlockNote. Pas de lockfile. README vide.
-5. `notes-v3` et `notes-v5` : aucun fichier LICENSE trouvé. `MindSpace` a refusé de copier leur code pour cette raison (`docs/notes-search-integration-2026-11-07.md`). À trancher avant tout portage.
+5. Licence : décision du 2026-11-10 = propriétaire (All Rights Reserved). `MindSpace/LICENSE` est encore MIT (PR #5) : contradiction à corriger. `notes-v3` et `notes-v5` n'ont aucun LICENSE ; `notes-v5` est public. Détail dans `02`, section 9.
 6. `notes-v5` : partage OS (`share_target`) déclaré mais non géré par son SW. `roadmap.md` dit "offline non porté" alors que le SW existe.
 7. `notes-v6` : `main` reçoit des commits directs sans PR ni bump de version (installation PWA, capture directe).
 8. Docs contredisant le code : `pwa-baseline.md` (notes-v3, notes-aistudio) dit "network-first", le SW est cache-first.
