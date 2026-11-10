@@ -11,6 +11,8 @@ Versions = plages de `package.json` sauf mention (lockfiles non lus).
 4. Sync : livrer d'abord le transport par dossier (File System Access API) pour valider l'usage. Relais géré payant ensuite. Aucune infrastructure serveur avant validation de l'usage local.
 5. Règle E2E + IA : le chiffrement reste la norme pour la sync et le stockage. Toute fonction IA (ex : résumé) envoie du contenu en clair au serveur. L'utilisateur doit y consentir explicitement.
 
+6. Architecture : CalVer `y.m.d-n`, `skipWaiting` automatique, Zustand, Node 24, CSS natif utilitaire (section 11).
+
 Base de code cible : métier de `notes-v3`, UI / Tiptap / Yjs de `MindSpace`.
 
 ## 1. Stack par repo
@@ -72,7 +74,7 @@ Divergences à connaître avant un portage v3 vers MS :
 | `notes-v6` | `6.mois.jour.rang` (`APP_VERSION`), `package.json` reste 6.0.0 | 6.10.31.3 | aucun |
 | `notes-4` | `26.10.19.8` (Réglages) | | aucun |
 
-Trois schémas différents pour une même lignée : décision à prendre avant l'unification (section 10).
+Trois schémas différents pour une même lignée. Décision du 2026-11-10 : CalVer `y.m.d-n` (section 11).
 
 ### Branches et PR
 - v3 : `claude/<sujet>-AAAA-MM-JJ`, puis `ccr-<id>`. v3 déploie depuis `main` uniquement.
@@ -213,22 +215,57 @@ Ordre conseillé : scan de secrets, correction de la licence, vérification de l
 | `notes-v6` | `Workspace.svelte` 30 Ko ; PJ en data URL ; pas d'historique ; pas de purge corbeille ; commits directs sur `main` ; 4 branches non mergées |
 | `MindSpace` | `App.tsx` 36 Ko ; pas de lockfile ; README vide ; `changelogData.ts` périmé ; `dependabot.yml` BlockNote ; Playwright hors PR ; `DISCOVERABILITY.md` périmé ; MIT contradictoire |
 
-## 11. Synthèse évolutive : conventions à conserver ou à trancher
+## 11. Synthèse évolutive : conventions et décisions d'architecture
 
 À conserver (déjà éprouvées) :
 - Contrôle de changelog sur toute modification d'app (v3).
-- Version liée à la PR et vérifiée en CI (v5, MS).
+- Version calculée et vérifiée en CI (MS `release-version.yml`, v5 `check-release.mjs`).
 - Tokens seuls, aucun hex ni z-index numérique (v5).
 - Portes d'accessibilité : contraste, cibles 44 px, piège de focus (v3, v6, MS).
 - Précache atomique et refus des réponses non-2xx (v6, v3).
 - Sauvegarde de sécurité avant import, aperçu avant écriture (v5, MS).
 
-À trancher (vous décidez) :
-1. Schéma de version unique : `YY.M.D.n`, `6.11.JOUR-N` ou `5.M.J+PR` ?
-2. Politique SW : `skipWaiting` automatique (MS) ou toast manuel (v3, v5). Avec Yjs, un onglet ancien peut écrire avec un ancien code (risque documenté en v5 `technical-snapshots.md`).
-3. Zustand (v3) ou état local (MS) pour le port.
-4. Node 22 ou 24 comme cible CI.
-5. Tailwind 4 (MS) ou CSS natif (v3).
+### Décisions validées (2026-11-10)
+
+| # | Sujet | Décision |
+|---|---|---|
+| 1 | Versioning | CalVer `y.m.d-n`, exemple `6.11.10-3`. `y` = dernier chiffre de l'année, `n` = nombre de PR / merges du jour. Pas de SemVer. |
+| 2 | Service Worker | `skipWaiting` automatique. Risque de conflit d'onglet accepté pour itérer vite. |
+| 3 | État | Zustand. |
+| 4 | Node.js | 24. |
+| 5 | CSS | Natif, approche utilitaire "à la Tailwind" : classes écrites à la main, zéro dépendance. |
+
+### Conséquences relevées par l'audit (inventaire, pas de code)
+
+**1. Versioning**
+- `MindSpace` applique déjà ce schéma : `package.json` à `6.11.10-1`, déployé le 2026-11-10 (`6.11.JOUR-N` depuis la PR #39, `tests/versioning.test.mjs`, `release-version.yml`). Aucun changement de mécanisme pour la base cible.
+- Remplace `YY.M.D.n` (`notes-v3`) et `5.M.J+PR` (`notes-v5`). Ces deux repos restent figés sur leur ancien schéma.
+- Analyse : `n` compte les PR mergées du jour, fuseau Paris dans l'implémentation `MindSpace`, pas le numéro de PR. Le texte de la décision dit "PR / merge" : l'implémentation fait foi tant qu'elle n'est pas modifiée.
+- Analyse : npm exige une chaîne semver valide. `6.11.10-3` en est une (pré-release), à condition que le mois et le jour n'aient pas de zéro initial. Elle ne porte aucune sémantique majeur / mineur / correctif.
+- Analyse : `y` est le dernier chiffre de l'année, donc 2026 et 2036 donnent tous deux `6`. Collision de décennie à traiter avant 2036.
+
+**2. Service Worker**
+- Aligne le produit cible sur `MindSpace` (`skipWaiting` + `clients.claim`, cache `mindspace-static-v2`, navigation réseau d'abord).
+- Abandonne le toast "Nouvelle version disponible · Recharger" de `notes-v3` et `notes-v5`.
+- Risque accepté, tel que documenté : un onglet ancien peut écrire avec un ancien code (`notes-v5/docs/technical-snapshots.md` demande de fermer les anciens onglets avant déploiement). Avec Yjs (un Y.Doc par note), l'écriture concerne aussi les documents collaboratifs.
+- À reprendre du portage : précache atomique et refus des réponses non-2xx (`notes-v6`, `notes-v3`). Le test `notes-v3/tests/sw-regression.mjs` suppose le comportement actuel de `notes-v3` (pas de `skipWaiting` automatique) et devra être adapté.
+
+**3. Zustand**
+- Source : `notes-v3/src/store.ts` (10 Ko, `^5.0.16`). `MindSpace` n'a aucun store : l'état vit dans `App.tsx` (36 Ko).
+- Ajoute une dépendance d'exécution à `MindSpace`. Ratio d'utilité : non mesuré (règle utilisateur : proche de 100 %).
+- Non spécifié : frontière entre l'état Zustand et les données Dexie / Y.Doc. À définir avant de porter `store.ts` (modèle de données différent : objets Markdown dans v3, documents Yjs dans MS).
+
+**4. Node.js 24**
+- Déjà la cible de `MindSpace` (`engines >=24.22.1 <25`), `notes-v5` (24) et `notes-v6` (24.22.2). Hostinger : `node_version` 24 confirmé sur le build `01a1c55e` du 2026-11-10.
+- Seul `notes-v3` (`deploy.yml`, Node 22) doit monter en 24 au portage.
+- Constat local : l'environnement d'audit exécutait Node 22.23.4 et `npm install` a signalé `EBADENGINE`. Les tests node de MindSpace passent sous 22 après build.
+
+**5. CSS natif utilitaire**
+- Retire de `MindSpace` quatre dépendances : `tailwindcss`, `@tailwindcss/vite`, `tailwind-merge`, `tw-animate-css`. Usage réel dans les composants : non mesuré, à relever avant retrait.
+- Références existantes : CSS natif de `notes-v3` (`light-dark()`, `color-mix`, nesting, `tokens.css` + `looks.css`) ; `MindSpace/src/style.css` (39 Ko) à rapprocher des tokens.
+- Contraintes déjà établies qui restent applicables : aucun hex ni z-index numérique, échelle `--z-*`, préfixe `--ms-*`, cibles 44 px, contrastes (section 3).
+- Non spécifié : convention de nommage des classes utilitaires (préfixe, échelle d'espacement, variantes responsive et états). À écrire avant la première migration.
+- Les choix visuels (couleurs, mise en page, micro-interactions) restent à l'utilisateur. Cette décision porte sur la méthode d'écriture du CSS, pas sur le rendu.
 
 ## 12. Limites
 
