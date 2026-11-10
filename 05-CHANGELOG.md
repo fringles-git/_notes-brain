@@ -102,3 +102,15 @@
 - Non vérifié : clavier virtuel mobile (la barre fixe et le dock peuvent passer sous le clavier), appareil réel, hash de build en ligne (aucun déploiement).
 - Décisions visuelles en attente du propriétaire : emplacement de la barre d'outils (îlot fixe au-dessus du dock), anneau de focus sur toute la zone d'édition, échelle typographique, libellés textuels sans icônes.
 - Dependabot actif sur `mindspace-core` (PR #2) : premières exécutions en file d'attente, PR de mises à jour attendues.
+
+## 2026-11-10 : persistance locale de mindspace-core
+
+- `mindspace-core` commit `c74ffb6` poussé directement sur `main` sur ordre explicite. Texte en Yjs (`y-indexeddb`, un Y.Doc par note, champ `default`), métadonnées en Dexie, id de la note ouverte en Zustand, bouton "+" Nouvelle note dans le Dock.
+- Frontière des données appliquée : table `notes` = `id` (UUID v4), `title`, `createdAt`, `updatedAt`, aucun champ de contenu (test et lecture de la base réelle). `draftStore` supprimé : l'exception temporaire est levée.
+- Bases IndexedDB : `mindspace-core` et `mindspace-core-note-<id>`, noms distincts de `mindspace` / `mindspace-note-<id>` de l'ancienne app (collision possible si même origine un jour).
+- Dépendances ajoutées : `dexie`, `yjs`, `y-indexeddb`, `@tiptap/extension-collaboration` (demandées), `@tiptap/y-tiptap` (pair obligatoire de Collaboration), `fake-indexeddb` (dev, tests). Une seule instance de `yjs` dans l'arbre.
+- Vérifié en local (Node 24.22.1) : `tsc --noEmit`, 46 tests, `vite build`. Chromium 390 px sur le serveur de dev : texte tapé puis rechargement après 100 ms, texte restauré (titre, gras) ; une seule note créée malgré StrictMode ; ouvrir une note ne modifie pas `updatedAt` ; annulation via l'historique Yjs ; texte conservé au changement de page ; "Nouvelle note" ouvre une note vide, rechargement sur la plus récente ; double appui = une seule note ; la première note reste stockée ; aucune erreur console.
+- Bundle : un chunk JS de 844,8 Ko (265,3 Ko gzip), contre 626,6 Ko avant (Yjs, Dexie, Collaboration). Aucune scission du code.
+- Limites connues : `y-indexeddb` n'expose pas d'erreur d'ouverture (si IndexedDB est indisponible, la note reste en "Restauration…") ; aucune liste de notes, donc les notes antérieures ne sont pas rouvrables ; `title` reste "Sans titre" (dérivation depuis le contenu = index dérivé non spécifié) ; clavier virtuel et appareil réel non testés ; pas de test navigateur en CI.
+- Dock : marges horizontales des items réduites (16 px vers 12 px) pour tenir à 360 px avec le bouton "+". Décision visuelle du propriétaire en attente (emplacement et forme du "+").
+- Non vérifié : hash de build en ligne (aucun déploiement).
