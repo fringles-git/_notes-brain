@@ -233,7 +233,184 @@ Tranchées le 2026-11-10 :
 Restent ouvertes :
 5. Fournisseur d'IA, passerelle d'API, facturation, identité légale du titulaire : `non documenté`.
 
-## 11. Limites
+## 11. Archéologie Git (Solutions abandonnées)
+
+Passe du 2026-11-10 sur l'historique complet de `notes-v3` (118 commits), `brandonlazarre` (`notes-site` 8, `notes-v3` 65), `notes-aistudio` (7), `notes-v5` (41), `notes-v6` (23, plus 4 branches jamais mergées) et `MindSpace` (HEAD `c7c61a1`, version 6.11.10-1).
+Méthode : `list_commits` avec `path` sur chaque fichier critique, `get_commit` en `full_patch` (la valeur `patch` n'existe pas dans l'outil), `pull_request_read` pour les raisons. `list_commits` n'a pas de filtre par message ; la recherche `gh api search/commits` par mots-clés a donné peu de résultats (aucun pour `rewrite` sur MindSpace).
+Étiquettes de preuve : `[vérifié]` = confirmé sur le code courant le 2026-11-10 ; `[patch lu]` = lu dans un patch, non exécuté.
+
+### 11.1 Résultat par module critique
+
+| Module | Résultat |
+|---|---|
+| Recherche | Aucune solution passée supérieure. `notes-v3` #10 (`f133fd3`) et `MindSpace` #45 (`d9f203e`) remplacent une simple sous-chaîne `toLowerCase().includes()`. Seule perte : la recherche d'expression exacte (MS). |
+| Sync (`sync.ts`, `syncApp.ts`, `syncApply.ts`, `diff.ts`) | Aucune implémentation antérieure remplacée. Commits additifs (3 sur `sync.ts`). Un garde-fou perdu en aval : fiche A1. |
+| Ranger (`tidy.ts`) | Aucune implémentation antérieure remplacée (3 commits additifs, 0 et 1 suppression). |
+| Éditeur | Ancien éditeur BlockNote : ne pas restaurer. Deux pépites : l'import Markdown riche annulé (M1) et les lacunes du convertisseur BlockNote vers Tiptap (M6). |
+| Crypto, tables, rappels | `crypt.ts` (1 commit), `table.ts` (2), `ics.ts` : rien de supérieur. L'ancien `toCalendar` en ligne n'avait ni repli de ligne à 75 octets ni masquage des notes verrouillées. |
+
+### 11.2 Fiches : implémentations passées supérieures ou partiellement supérieures
+
+**M1. MindSpace : import Markdown riche vers Tiptap. Verdict : supérieure. [patch lu]**
+- Commit : `f207d4e` (PR #43), annulé par `22d3a53` (PR #44, 2026-11-07).
+- Supprimé : `src/data/markdownImport.ts` (180 lignes, `markdownToTiptap()` retournant `{body, editorJson}`), `tests/markdown-import.test.mjs` (65 lignes, 6 tests), un scénario dans `tests/notes-shell-v2.spec.ts` (+24 lignes), 9 lignes dans `importTextNotes` de `src/App.tsx` (appliquées aux `.md` et `.markdown`).
+- Produisait : `heading` (1 à 3), `paragraph`, `bulletList`, `orderedList` (attribut `start`), `listItem`, `blockquote`, `codeBlock` (clôtures ``` ou ~~~ de même longueur), `horizontalRule`, tables GFM (`table`, `tableRow`, `tableHeader`, `tableCell`, `textAlign` lu depuis `:---:`, `\|` échappé) ; marques `bold`, `italic`, `strike`, `code`, `link`.
+- Sécurité : liens limités à `http(s)://` et `mailto:`, sans caractère de contrôle ni `<>"'`, libellé ≤ 256, href ≤ 2048 ; HTML jamais interprété (test `<img onerror>` reste du texte) ; `javascript:` ne crée aucun lien. Limites : 2 Mio (`MAX_MARKDOWN`) et 20 000 lignes (`MAX_LINES`), `RangeError` avant parsing.
+- Remplacé par : rien. `importTextNotes` (HEAD) stocke `body: content` sans `editorJson`. L'éditeur affiche alors `## Titre` comme texte littéral, car `legacyMigration.ts` découpe par `\n`.
+- Raison : non documentée. Le corps de #44 dit seulement "Reverts #43". Codex n'avait signalé aucun défaut. Le corps de #43 disait Playwright non exécuté. `docs/legacy-repository-audit-2026-11-06.md` listait déjà cette conversion comme point non résolu.
+- Limites de #43 elle-même : pas de listes imbriquées, de tâches, d'images ni de `_emphase_` ; titres H4+ absents ; langage de bloc de code perdu.
+- Coût : faible. Un revert de `22d3a53` devrait s'appliquer proprement (non testé). Alerte liée : `changelogData.ts` annonce encore la fonction (voir `00-INDEX.md`, alerte 4).
+
+**M2. MindSpace : repli SPA du serveur Node. Verdict : supérieure pour les liens profonds. [vérifié]**
+- Commits : `3c0fa3f` (PR #9) puis `3d8e2c9` (PR #10) puis `53cd9bf` (PR #16, 2026-11-05).
+- Supprimé : dans `server.mjs`, la condition générique `!path.includes('.') && Accept contient text/html`.
+- Remplacé par : `isClientRoute()`, regex `^/settings(?:/[a-z0-9-]+(?:/releases/[0-9a-z.-]+)?)?/?$` plus `^/releases/[0-9a-z.-]+/?$`. Commentaire : "missing assets/API endpoints stay 404".
+- Constat sur `main` : j'ai exécuté la regex. `/settings/a-propos/versions` donne `false`, `/settings/a-propos/quoi-de-neuf` donne `false`. Ces deux routes existent dans `src/main.tsx`. Un rechargement direct tombe dans le 404 JSON du serveur, sauf réécriture côté hébergeur (non vérifiée). `tests/server.test.mjs` (ligne 39) ne teste aucune des deux.
+- Coût : trivial. Élargir la regex à `^/settings(?:/[a-z0-9-]+)*/?$` et ajouter les deux chemins au test.
+
+**M3. MindSpace : service worker réseau d'abord. Verdict : partiellement supérieure. [patch lu]**
+- Commit : `1392b09`, PR #19, 2026-11-05. `mindspace-static-v1` devient `mindspace-static-v2`.
+- Supprimé : réseau d'abord pour tous les GET de même origine, remise en cache de chaque réponse OK, repli sur l'entrée exacte puis `/index.html`.
+- Remplacé par : navigations réseau d'abord avec repli `/index.html` ; `/assets/` et SHELL en cache d'abord ; `LIMIT = 60` (suppression des entrées les plus anciennes).
+- Raison : "deployments cannot be stuck behind a cached SPA".
+- Perte : `/index.html` n'est mis en cache qu'à l'install et n'est jamais rafraîchi. Déduction non exécutée : les clés SHELL sont les plus anciennes et partent en premier au-delà de 60 entrées.
+- Gain du remplaçant : ne met en cache que `/assets/` et SHELL (moins de contenu mis en cache sans contrôle).
+- Coût : faible. Rafraîchir `index.html` à chaque navigation réussie et exclure SHELL de l'éviction. Cohérent avec la décision `skipWaiting` automatique (`03`, section 11).
+
+**M4. MindSpace : CI Playwright sur chaque PR. Verdict : supérieure en couverture. [patch lu]**
+- Commits : `#32` (2026-11-06), `#33`, `9c0aab6` (PR #41, 2026-11-07).
+- Supprimé : `playwright install` + `npm run smoke` (persistance) sur chaque PR ; `design-system-ci.yml` avec `paths` (check, release, design, collab, version, build, server, sw, Playwright, rapport et captures en artefact) ; job manuel `browser` de `dependency-ci.yml`.
+- Remplacé par : `dependency-ci.yml` (`npm run build` puis `node --test tests/*.test.mjs`) ; `design-system-ci.yml` en `workflow_dispatch` seul, 3 specs.
+- Raison : "accélérer les PR et supprimer les tests redondants" ; "remove perpetually skipped browser check".
+- Perte : aucun workflow à HEAD ne lance la persistance IndexedDB, l'éditeur ni le routage. La PR #45 le confirme : ses specs de recherche n'ont pas tourné faute de Chromium.
+- Coût : faible. Le bloc d'étapes est dans le patch de #32 ; il coûte des minutes de CI.
+
+**M5. MindSpace : deux chemins d'import JSON incompatibles. Verdict : partiellement supérieure (chemin Réglages). [patch lu]**
+- Contexte : PR #34. Ce n'est pas du code supprimé, deux chemins coexistent.
+- Chemin Réglages (`src/hooks/useStorageDiagnostics.ts`) : limite 50 Mo ; snapshot précédent téléchargé ; transaction atomique clear + `bulkPut` ; suppression des bases Yjs orphelines. Il préserve `orderedList.start` et `codeBlock.language`. Il écrit sans filtrer les clés inconnues ni les types de `pinned`, `hidden`, `tags`.
+- `backupImport.ts` : liste blanche de nœuds, marques et attributs ; plafonds 16 Mio, 5000 éléments, profondeur 30, 20 000 nœuds ; aperçu et copies avec nouveaux identifiants. Il ne conserve que `heading.level`, `textAlign`, `colspan`, `rowspan`, `colwidth` : il perd donc `orderedList.start` et `codeBlock.language`.
+- Incompatibilité : l'export de la liste (`format: 'mindspace-local-export'`, `version: 1`) est refusé par l'import des Réglages ("Version de schéma inconnue"). L'enveloppe des Réglages (`schemaVersion`, `tables`) est refusée par `inspectMindSpaceBackup`, qui exige `version === 1`.
+- Coût : moyen. Adaptateur de format, et `validate()` des Réglages réutilisant `safeEditorJson` avec les attributs manquants.
+
+**M6. MindSpace : convertisseur BlockNote vers Tiptap lacunaire. Verdict : l'ancien éditeur n'est pas à restaurer, le convertisseur est à compléter. [patch lu]**
+- Commits : `690b289`, `4b11860`, `dbbcaa2` (2026-11-05), PR #19 puis #21 (merge `a37e3c9`). `src/components/notes/NoteEditor.tsx` (35 lignes, `BlockNoteView`, `blocksToMarkdownLossy`) n'est resté que ~38 minutes dans `main`.
+- Remplacé par : `src/components/editor/Editor.tsx`, `EditorToolbar.tsx`, `SlashMenu.tsx`, `legacyMigration.ts` (`initialTiptapDocument`). Aucun test supprimé ; `persist.spec.ts` change de sélecteurs (`.bn-editor` vers `.tiptap`) et gagne 5 tests.
+- Raison : `EDITOR_MIGRATION.md` : les formats avancés peuvent différer, `blocksJson` est conservé pour le rollback.
+- Lacunes de `legacyMigration.ts` (inchangé depuis #21) : les inlines non `text`, donc les liens, sont ignorés (le texte du lien disparaît) ; `checkListItem` devient du texte "☑" ou "☐" (aucune extension de tâches installée) ; niveaux de titre bornés à 2 alors que l'éditeur en accepte 3 depuis #27 ; `strike`, `underline`, `codeBlock`, `quote`, `table`, séparateurs absents ; `children` aplatis en paragraphes. Inférence non exécutée : un bloc `table` ferait lever `flatMap`, rattrapé par le `try` avec repli sur `body` pour toute la note.
+- Coût : faible à moyen. Étendre le mapping est facile ; les tâches imposent d'ajouter `TaskList`.
+
+**V1. notes-v6 : filtres de la Bibliothèque et réordonnancement. Verdict : supérieure. [patch lu]**
+- Commit : `7f35142`, branche `feat/quiet-home-filters`, 2026-10-30, jamais mergée.
+- Retire de main : `DashboardOverview.svelte` et son CSS (`mind-illustration`, `overview-card`) ; la barre `.library-filters` de 8 contrôles ; le `draggable="true"` HTML5 (toujours dans main, `NoteLibrary.svelte:35`).
+- Ajoute dans `NoteLibrary.svelte` : `chips` dérivé, `clear(key)`, `clearFilters()` (conserve le tri), `portal`, `sheetKeys` ; une feuille `<dialog class="filter-sheet">` (panneau droit sur tablette, feuille basse sur téléphone, plages de dates liées par `min` / `max`, bouton "Afficher N notes") ; réordonnancement par pointer events (`gripDown`, `gripMove`, `gripEnd`, `gripCancel`, `setPointerCapture`, `touch-action:none`, défilement automatique à 72 px du bord) ; boutons ↑ / ↓ seulement en mode "Mon ordre". Dans `components.css` : survol conditionné par `@media (hover:hover)`.
+- Raison (commit) : "8-control filter bar -> 'Filtres (n)' button + 'Trier par' select … HTML5 draggable removed". Le défaut du drag HTML5 au toucher n'est pas démontré, c'est le motif de la branche.
+- Coût : moyen (~0,5 j selon l'agent). Adapter `use:focusDialog` à la signature `focusDialog(node,{onClose})` de `10ce308` et refaire la partie qui touche l'ancien `+page.svelte` dans `Workspace.svelte`.
+
+**V2. notes-v6 : onboarding et identité. Verdict : supérieure. [patch lu]**
+- Commit : `ac3fbc7`, branche `feat/onboard-distill`, 2026-10-30, jamais mergée.
+- Retire de main : un prénom codé en dur et un avatar à initiale fixe (`Workspace.svelte:424,435`) ; `onboardingStep` à 3 étapes (`Workspace.svelte:56,77,506`) et tableau `onboarding` (`content.ts:3`) ; `topbar-context` statique.
+- Ajoute : une carte unique (confidentialité, prénom, "Écrire ma première note" / "Plus tard") ; `userName`, `setName`, `finishOnboarding(write)` en `localStorage 'notes-v6:name'` ; champ "Prénom" dans les Réglages ; `focusDialog` ciblant `[data-autofocus]` ; état vide "première note" dans `NoteLibrary` (absent de main) ; état "Aucune note ne correspond" avec bouton "Tout afficher" (main : "Aucun résultat", `NoteLibrary.svelte:41`) ; indicateur d'enregistrement dans la barre du haut.
+- Lien : décision ouverte de `PRODUCT.md` sur le prénom codé en dur.
+- Coût : faible à moyen (~0,5 j), surtout du report manuel vers `Workspace.svelte`. Non vérifié : si main gère `[data-autofocus]` dans `focus.ts`.
+
+**V3. notes-v6 : sauvegarde chiffrée et tâches. Verdict : partiellement supérieure. [patch lu]**
+- Commit : `d665efc`, branche `feat/typeset-polish`, 2026-10-31, jamais mergée.
+- Ajoute dans `EncryptedBackup.svelte` : lignes de réglage, bouton afficher / masquer la phrase (`Eye` / `EyeOff`), compteur "Encore N caractères", restauration sans `<input type=file>` natif. Dans `TaskList.svelte` : filtre segmenté Toutes / À faire / Terminées avec compteurs, recherche au-delà de 6 tâches, états vides adaptés. Typographie : plancher 14 px, texte sur canvas en "Graphite 2" (contraste 4,2:1 vers 7,1:1, non comparé à main).
+- Main a déjà un `<details>`, un minimum de 12 caractères et une aide. `docs/branch-cleanup.md` : ne pas merger la branche entière.
+- Coût : faible par composant.
+
+**V4. notes-v6 : thème "Système" et éditeur. Verdict : partiellement supérieure. [patch lu]**
+- Commit : `d11bb77` (2026-10-29), branche `fix/system-theme-editor` ; main a réimplémenté le correctif de fond dans `e309072` (PR #4, résolution dans `Workspace.svelte:162`).
+- Reste dans la branche seulement : suppression des blocs `:root[data-theme='system']` et `@media (prefers-color-scheme)` de `tokens.css` (main garde un bloc de jetons dupliqué de plus de 25 lignes, `tokens.css:116+`) ; script `app.html` avant premier rendu ; `data-theme-preference` ; icône `SunMoon` et indication "Suit ton appareil, sombre en ce moment" ; `detailsSummary` (statut, dossier, tags, fichiers, rappel) dans l'en-tête du tiroir Détails ; libellés "À faire avant le" et "Me le rappeler le".
+- Main garde en plus : les options de note ouvrent le tiroir à l'impression.
+- Coût : faible (~1 h selon l'agent).
+
+**V5. notes-v5 : traces d'export. Verdict : supérieure. [vérifié]**
+- Commit : `ad395f4`, PR #12 (2026-11-07).
+- Supprimé : `exportBackup()` dans `features.ts`, qui après un export réussi appelait `setPref('lastBackup', Date.now())` puis `persistStorage()` ; `backupBlob` dans `db.ts`.
+- Remplacé par : `exportBackup = () => openSheet('backup')`, puis `PortableBackup.tsx` / `exportPortable`.
+- Constat : `git grep lastBackup` sur `notes-v5` ne montre que des lectures (`features.ts:421,530`, `List.tsx:49,60`, `Sheets.tsx:207,235`) et la déclaration de type. Aucune écriture. Après une sauvegarde portable ou un snapshot, le rappel de sauvegarde (`backupNagDays`) continue de s'afficher et "Dernière" reste "Jamais".
+- Raison de la PR : parle de l'import, pas de ces effets de bord.
+- Coût : très faible. Deux appels après le téléchargement réussi, dans `PortableBackup.tsx` et `SnapshotTools.tsx`.
+
+**V6. notes-v5 : widgets Recap de l'accueil. Verdict : partiellement supérieure. [patch lu]**
+- Commits : `32e9bd9` (PR #14) puis `f1b5160` (PR #15), 2026-11-08.
+- Supprimé : l'appel `{s.page === 'home' && <Recap />}` dans `App.tsx`. `Recap()` et `widgets()` (`List.tsx:71-130`) subsistent comme code mort sans import.
+- Remplacé par : `Today` dans `Destinations.tsx` (5 tâches, 4 rappels, 3 notes à reprendre).
+- Perdu : widget "À réviser" (cartes dues, `startStudy(due)`) ; "Photo récente / Note vocale" ; "Souvenir" (note de plus de 30 jours) ; "Reprendre" borné par `CONFIG.resumeMs` ; "À venir" sur 14 jours avec dates détectées. `Today` n'affiche que les rappels explicites futurs.
+- Lien : `notes-v3` (référence métier) garde `Recap` monté dans `List.tsx` et `main.tsx`.
+- Coût : faible. Monter `widgets()` dans `Today`.
+
+**V7. notes-v5 : indice de pull-to-search. Verdict : supérieure. [patch lu]**
+- Commit : `32e9bd9`, PR #14. Supprimé : `<div className="pull-hint">` (icône + "Rechercher") dans le `Header` de `List.tsx`.
+- Le geste (`gestures.ts:178-186`, `--pull`) et le CSS `.pull-hint` (`app.css:128-138`) restent actifs : le geste n'a plus d'indice visible. Coût : une ligne JSX.
+
+**V8. notes-v5 : plafond d'export. Verdict : partiellement supérieure. [patch lu]**
+- Commit : `ad395f4`. `backupBlob` assemblait la sauvegarde note par note en concaténant des `Blob`, sans plafond. Remplacé par `makeArchive` / `exportPortable` (`portableBackup.ts`, JSON en mémoire, `PORTABLE_LIMIT` = 64 Mio). Perte sur les bibliothèques lourdes (audio, PDF). Coût élevé : chiffrement et JSON en flux (le conteneur AES-GCM par blocs existe).
+
+**A1. notes-aistudio : garde `syncSupported()`. Verdict : supérieure. [vérifié]**
+- Commit : `6dbe911` (2026-11-05, sans PR), export supprimé aussi par `6fc4b9d`. Message du commit : "feat: add QR code support and storage management".
+- Supprimé : `export const syncSupported` dans `src/syncApp.ts` ; dans `src/ui/SettingsPage.tsx`, `Synchro()` : `if (!syncSupported() && !c.folder) return <p className="layer-hint">{t('sync.unsupported')}</p>`.
+- Constat : `git grep syncSupported` renvoie 0 résultat dans `notes-aistudio`, et 3 dans `notes-v3` (`syncApp.ts:18`, `SettingsPage.tsx:15,61`). Sans la garde, sur un navigateur sans `showDirectoryPicker`, `chooseFolder()` revient silencieusement (`try/catch { return; }`) et l'utilisateur n'a aucune explication.
+- Coût : faible. Non vérifié : la clé `sync.unsupported` existe-t-elle dans les locales d'aistudio.
+- Pertinent pour le plan de portage : la sync par dossier est Chromium seulement (`03`, section 8).
+
+**A2. notes-aistudio : vue Tâches. Verdict : partiellement supérieure. [patch lu]**
+- Commit : `6fc4b9d`, PR #1, 2026-11-05. Supprimé : bascule `showDone` dans `Tasks.tsx`, clés `tasks.showDone`, `tasks.hideDone`, `tasks.allDone`, `tasks.hintAllDone`, `HeaderTools`.
+- Remplacé par : `view` (`pending|today|late|done`) avec chips et états vides en français codé en dur.
+- Perte : aucune vue ne montre plus à la fois les tâches ouvertes et terminées. Régression i18n : `docs/i18n-baseline.json` passe de 548 à 558 chaînes (`Tasks.tsx` 6, `Metadata.tsx` 9, `Tidy.tsx` 12 vers 13) : le plafond a été relevé au lieu d'être respecté.
+- Coût : faible. Restaurer les 4 clés, ajouter une chip "Tout", traduire les nouvelles chaînes.
+
+**A3. notes-aistudio : syntaxe de tâche `+ action`. Verdict : partiellement supérieure (rigueur). [patch lu]**
+- Commit : `6fc4b9d`, PR #1. `parseCheck`, `stripCheck`, `toggleCheck` dans `markdown.ts` ne reconnaissaient que `- [ ]` / `- [x]` (regex `CHECK_PREFIX`). Maintenant `parseCheck` accepte aussi `line.startsWith('+ ')` ; `toggleCheck` réécrit la ligne en `- [x] `.
+- Conséquence : toute puce Markdown `+ item` devient une tâche (comptée par `checkStats`, listée dans Tâches et Recap "À faire", réécrite en `- [x]`). Aucun cas de test pour une puce `+` non tâche dans `tests/metadata.mjs` (lu en stats seulement). Gain : les cases vides sont exclues par `checklistItems()`.
+- Coût : faible si on exige `+ ` en début de ligne hors liste.
+
+**A4. notes-aistudio : widgets Recap. Verdict : supérieure en fonctions. [patch lu]**
+- `6dbe911` (démontage, 2026-11-05) puis `6fc4b9d` (suppression de `Recap` et `widgets()` dans `List.tsx`), message : "retire Recap/QuickCapture et leurs styles inutilisés". Widgets perdus : Reprendre, À venir, À réviser, À faire, Photo récente / Note vocale, Souvenir.
+- `notes-v3` (HEAD) monte toujours `Recap` : aistudio a divergé. Coût moyen : copier `Recap` / `widgets` (~100 lignes), les règles CSS `.recap` et `.widget`, restaurer `CONFIG.resumeMs`.
+
+### 11.3 Remplacements jugés équivalents ou inférieurs à HEAD (une ligne chacun)
+
+- `notes-v3` Recherche, `f133fd3` (PR #10) : ancien filtre `toLowerCase().includes()` plus surlignage échappé ; nouveau : accents pliés, tous les mots dans n'importe quel ordre, cache `WeakMap`, `tests/search.mjs`. Ancien inférieur. Le bundle `notes-site` 26.10.15.1 utilise aussi `.includes()`.
+- `MindSpace` Recherche, `d9f203e` (PR #45) : ancienne sous-chaîne contiguë sur titre + corps, plus tag ; nouveau `src/data/noteSearch.ts` (NFD, œ/æ, mots en tout ordre, `WeakMap`, 4 tests Node, 2 Playwright à 390 et 1280 px). Seule perte : l'expression exacte. Aucun classement avant ni après.
+- `notes-v3` Service worker, `1b4f7fd` (PR #9) remplaçant `28bb4ea` et `0315a92` : réseau d'abord avec course de 3 s et `no-store`, remplacé par cache d'abord avec revalidation. Équivalent, compromis : ouverture immédiate et hors ligne, mais shell précédent jusqu'au "Recharger". Aucun apport récupérable.
+- `notes-v3` Réglages feuille vers page, `47c570d` (PR #15) : toutes les options conservées ; ajouts (sync, `.ics`, langue). Inférieur.
+- `notes-v3` Rappels, `7fce56b` (PR #21) : `ics.ts` plie à 75 octets, masque les notes verrouillées, `tests/ics.mjs`. Inférieur.
+- `notes-v3` Notes de démarrage, `35c0380` (PR #1 de `brandonlazarre`) : `STARTER_NOTES` remplacées par la carte `FirstUse` et le guide en feuille. Équivalent, choix de conception.
+- `notes-v3` Filtrer, `1224a58` (2026-10-18) retiré, revenu dans l'île du haut via `2c7478e` (PR #14). Équivalent.
+- `MindSpace` Barre d'outils, PR #27 : dock bas réduit ; H1 / H2 / code seulement en mode étendu ; le menu `/` (7 entrées) n'a ni H3, ni tableau, ni blocs rapides. Équivalent.
+- `MindSpace` Hébergement, PR #10, #11, #12, #20 : `hostinger.mjs` et `postinstall` conservés. Équivalent, hors M2.
+- `MindSpace` Export, PR #35 : `body` brut remplacé par `noteToMarkdown`. Inférieur.
+- `MindSpace` Tests supprimés `global-export.test.mjs`, `legacy-features.test.mjs` (assertions sur du code source). Inférieurs.
+- `notes-v6` `db.ts` à trois stores vers `entries` ; `cleanNote` laxiste vers validation v2 (50 000 entrées, 100 Mo) ; `focus.ts` vers isolation `inert` ; service worker `c80dbb0` (précache atomique, secours "toute navigation vers l'accueil" devenu `Response.error()` hors shell, écart mineur). Inférieurs ou équivalents.
+- `notes-v5` Dexie transactionnel (PR #10), import par aperçu (PR #11, #12), Undo à jeton (PR #13). Inférieurs. TanStack Start / Nitro retirés (PR #9) : équivalent, seuls les écouteurs globaux d'`error-capture.ts` ont disparu. Dock 5 entrées (PR #14) vers 4 destinations (PR #15) : équivalent, un tap de plus pour la Bibliothèque. Apparence rapide sans Style / Accent, couleurs de type de note neutres (`KIND_TONE`), `.ctl`, changelog à la demande : équivalents.
+- `notes-aistudio` QuickCapture (`6fc4b9d`) : équivalent, doublon du menu "+". Seules pertes : le raccourci N ou `/` et la conversion `- ` vers `- [ ]`. `SearchDock` : un seul passage au lieu de N, inférieur.
+
+### 11.4 Priorités d'action (propositions, vous arbitrez)
+
+| Priorité | Fiche | Action | Raison |
+|---|---|---|---|
+| 1 | M2 | Élargir `isClientRoute` et tester les 2 routes | Bug vérifié sur le produit déployé |
+| 2 | M1 | Restaurer l'import Markdown (revert de `22d3a53`) | Comble un manque documenté, sans dépendance |
+| 3 | V5 | Réécrire `lastBackup` et `persistStorage` à l'export | Régression vérifiée |
+| 4 | A1 | Reprendre la garde `syncSupported` dans tout port de la sync | Sync Chromium seulement |
+| 5 | M6, M5 | Compléter `legacyMigration.ts` ; unifier les deux imports JSON | Pertes silencieuses |
+| 6 | M4 | Remettre une CI navigateur minimale sur PR | Couverture nulle de la persistance |
+| 7 | V1, V2 | Reporter filtres et onboarding de `notes-v6` | Seulement si `notes-v6` reste vivant |
+| 8 | V6, A4 | Réintégrer Recap (déjà dans `notes-v3`) | Révision espacée sans entrée |
+
+### 11.5 Limites de cette passe
+
+- Rien n'a été exécuté. Les verdicts viennent de la lecture de patchs et de fichiers, sauf trois points `[vérifié]` (M2, V5, A1).
+- `notes-v3` : patches non lus pour `40209be`, `0eda4f0`, `893b157`, `9e55241` (sans réécriture ultérieure dans l'historique des fichiers) ; patches de plusieurs commits lus en statistiques seulement ; `pull_request_read` non utilisé, raisons tirées des messages de commit ; `gh search/commits` non utilisé (historiques assez petits pour être lus en entier).
+- `brandonlazarre` `notes-site` : seuls `sw.js` et la fonction de recherche comparés. Le bundle minifié de 560 Ko n'a pas été comparé au source.
+- `MindSpace` : `style.css` et `tokens.css` non comparés (ancien `@theme` contre `--ms-*`) ; réglages et changelog (PR #13 à #17, #23, #24, #36, #37 : suppression de `changelog.css`, `SettingsHub.tsx`, `ReleaseDetail.tsx`) sans verdict ; `tests/sw.test.mjs`, `tests/deployment.test.mjs`, `noteTemplates.ts` non lus.
+- `notes-v6` : aucun éditeur `svelte-lexical` dans l'historique (un `MarkdownEditor` en textarea) ; les 23 commits n'ont pas été lus un à un.
+- `notes-v5` : PR #11 lu par son corps, pas par le patch de `snapshot.ts` ; PR #8 lu sur le CSS seulement ; import `b1f1731` en un seul commit, aucune implémentation antérieure visible.
+- Restaurer ne veut pas dire fusionner : les coûts sont des estimations des lecteurs de patch.
+
+## 12. Limites
 
 - Pas de lecture des lockfiles, pas d'exécution de l'app, pas de hash de build en ligne vérifié.
 - Les cases `?` sont des points non trouvés dans les docs lues, pas des absences prouvées.

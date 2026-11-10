@@ -38,3 +38,11 @@
   5. CSS natif, approche utilitaire écrite à la main, zéro dépendance.
 - Non spécifié, à écrire avant le code : frontière Zustand / Dexie / Yjs ; convention de nommage des classes utilitaires ; relevé d'usage de Tailwind avant retrait ; collision de décennie du `y` en 2036.
 - Alertes restantes : passage en privé de 5 repos (action manuelle), scan de secrets, fichiers permutés de `notepad-pwa` et `notes-svelte`.
+
+## 2026-11-10 : archéologie Git
+
+- Passe sur l'historique de `notes-v3`, `brandonlazarre` (`notes-site`, `notes-v3`), `notes-aistudio`, `notes-v5`, `notes-v6` (avec ses 4 branches non mergées) et `MindSpace`.
+- Ajout de `02`, section 11 "Archéologie Git (Solutions abandonnées)" : 14 fiches (M1 à M6, V1 à V8, A1 à A4) plus remplacements équivalents ou inférieurs.
+- Recherche, Sync, Ranger : aucune solution passée supérieure. Pépites : import Markdown riche de `MindSpace` #43 (annulé par #44), filtres / onboarding / sauvegarde de `notes-v6` (branches non mergées), widgets Recap, garde `syncSupported`.
+- Trois constats vérifiés sur le code courant : `MindSpace` `server.mjs` renvoie 404 JSON sur `/settings/a-propos/versions` et `/settings/a-propos/quoi-de-neuf` en chargement direct ; `notes-v5` n'écrit plus `lastBackup` ; `notes-aistudio` a perdu `syncSupported` que `notes-v3` garde.
+- Non fait : correctifs de code, exécution des tests, comparaison de `style.css` / `tokens.css` de `MindSpace`.

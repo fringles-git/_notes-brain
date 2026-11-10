@@ -9,7 +9,7 @@ Statuts utilisés partout : `shipped`, `experimental`, `described only`. Champ i
 |---|---|---|
 | `00-INDEX.md` | Carte des repos, branches, PR, alertes. | écrit |
 | `01-BUSINESS-AND-VISION.md` | MRR, freemium, killer features, personas, doublons à rejeter. | écrit |
-| `02-FEATURES-AND-ARCHAEOLOGY.md` | Matrice features, UI/UX, navigation, PWA, rejets, plan de portage, licence. | écrit |
+| `02-FEATURES-AND-ARCHAEOLOGY.md` | Matrice features, UI/UX, navigation, PWA, rejets, plan de portage, licence, archéologie Git (section 11). | écrit |
 | `03-TECH-CONVENTIONS.md` | Stack, architecture, nommage, CI, tests, sécurité, contraintes E2E + IA, gouvernance de dépôts, dette. | écrit |
 | `05-CHANGELOG.md` | Journal de session. | écrit |
 
