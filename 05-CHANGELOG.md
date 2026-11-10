@@ -46,3 +46,23 @@
 - Recherche, Sync, Ranger : aucune solution passée supérieure. Pépites : import Markdown riche de `MindSpace` #43 (annulé par #44), filtres / onboarding / sauvegarde de `notes-v6` (branches non mergées), widgets Recap, garde `syncSupported`.
 - Trois constats vérifiés sur le code courant : `MindSpace` `server.mjs` renvoie 404 JSON sur `/settings/a-propos/versions` et `/settings/a-propos/quoi-de-neuf` en chargement direct ; `notes-v5` n'écrit plus `lastBackup` ; `notes-aistudio` a perdu `syncSupported` que `notes-v3` garde.
 - Non fait : correctifs de code, exécution des tests, comparaison de `style.css` / `tokens.css` de `MindSpace`.
+
+## 2026-11-10 : initialisation de mindspace-core
+
+- Repo `fringles-git/mindspace-core` : commit `fd2427e` poussé directement sur `main` sur ordre explicite (pas de PR). Contenu : `CLAUDE.md`, `LICENSE` (All Rights Reserved), `"license": "UNLICENSED"`, Vite 8.3 + React 19.3 + TypeScript 7 + zustand 5, lockfile, Node 24.22.1.
+- Audit de `notes-v3/src/crypt.ts` (HEAD `6e441ec`) avant portage :
+  - IV : pas aléatoire. Nonce = compteur de chunk (8 octets à zéro + u32). Unicité (clé, nonce) garantie par une clé AES-256 par fichier (HKDF, sel de 16 octets via `crypto.getRandomValues`). Conception conservée : format `NOTESENC` v1 inchangé, sauvegardes v3 lisibles.
+  - Tag : GCM 16 octets par chunk, vérifié par WebCrypto. AAD = en-tête + drapeau de dernier chunk : troncature, ajout, réordonnancement et en-tête modifié rejetés.
+  - KDF : HKDF-SHA256, `info` `notes/backup/v1`. Pas de KDF de mot de passe : la clé maîtresse est 128 bits aléatoires (phrase de 28 signes). Force effective : 128 bits, pas 256.
+  - Faiblesses corrigées : clé de longueur quelconque acceptée (clé vide chiffrait), taille de chunk non bornée à l'écriture (fichier illisible par le lecteur), compteur u32 bouclable sur plus de 2^32 chunks.
+- `src/crypt.ts` et `tests/crypt.test.ts` (node:test, 25 cas, vert sous Node 24.22.1) : aller-retour aux frontières de chunk, mauvaise clé, altération, troncature, réordonnancement, vecteur de compatibilité généré par le code v3.
+- `tsc --noEmit` et `vite build` verts en local.
+
+### Non vérifié
+- Statut CI : aucun workflow dans `mindspace-core`. Hash de build en ligne : aucun déploiement.
+- Zustand installé, non utilisé (frontière Zustand / Dexie / Yjs non spécifiée, `03` section 11).
+- Version `6.11.10-1` choisie par application de `03` section 11 ; `n` non issu d'une PR mergée.
+
+### À décider
+- Phrase de 128 bits (28 signes) ou 256 bits si "AES-256" doit désigner la force effective.
+- Ajout d'un workflow CI (typecheck, build, `npm test`) dans `mindspace-core`.
