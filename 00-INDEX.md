@@ -71,7 +71,7 @@ Total PR : 112.
 
 1. `notepad-pwa` HEAD : contenus de fichiers permutés (`README.md` contient le SW, `src/style.css` contient le JS, etc.). Build non fiable.
 2. `notes-svelte` HEAD : `+layout.svelte` et `+page.svelte` apparemment permutés. Import `lucide-svelte` au lieu de `@lucide/svelte`.
-3. `notes-3` et `notes-4` : l'écriture sur mauvais chemins a cassé le déploiement Hostinger avant la PR #1 de `notes-4`.
+3. `notes-4` : l'écriture de fichiers sur de mauvais chemins a cassé chaque build Hostinger jusqu'à la PR #1.
 4. `MindSpace` : `changelogData.ts` annonce toujours l'import Markdown retiré par #44. `DISCOVERABILITY.md` périmé (dit qu'aucun MCP n'existe). `dependabot.yml` référence encore BlockNote. Pas de lockfile. README vide.
 5. `notes-v3` et `notes-v5` : aucun fichier LICENSE trouvé. `MindSpace` a refusé de copier leur code pour cette raison (`docs/notes-search-integration-2026-11-07.md`). À trancher avant tout portage.
 6. `notes-v5` : partage OS (`share_target`) déclaré mais non géré par son SW. `roadmap.md` dit "offline non porté" alors que le SW existe.
