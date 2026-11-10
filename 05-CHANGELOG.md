@@ -66,3 +66,14 @@
 ### À décider
 - Phrase de 128 bits (28 signes) ou 256 bits si "AES-256" doit désigner la force effective.
 - Ajout d'un workflow CI (typecheck, build, `npm test`) dans `mindspace-core`.
+
+## 2026-11-10 : décisions crypto, CI, frontière des données
+
+- `mindspace-core#1` (ouverte, non mergée) : `.github/workflows/ci.yml` et `CLAUDE.md` mis à jour.
+- Décisions du propriétaire :
+  1. `crypt.ts` conservé tel que porté (nonce compteur, clé par fichier, HKDF). Phrase de 128 bits. UI publique : "Chiffrement AES-GCM", jamais "AES-256".
+  2. CI : `npm`, `tsc --noEmit`, `npm test`, `vite build` sur chaque PR et push `main`. Écart appliqué : `npm ci` au lieu de `npm install`.
+  3. Frontière des données : Yjs = contenu, Dexie = métadonnées et pièces jointes, Zustand = UI seulement.
+- `03` section 11 : décisions 6 à 8 ajoutées, "frontière non spécifiée" remplacée.
+- Alerte ouverte : le miroir du contenu Yjs dans Dexie (`editorJson`, `body`) n'a ni format ni règle de resynchronisation. Bloque recherche, aperçus de liste, export.
+- Non vérifié : statut CI de `mindspace-core#1` (première exécution du workflow).

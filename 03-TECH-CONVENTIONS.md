@@ -234,6 +234,9 @@ Ordre conseillé : scan de secrets, correction de la licence, vérification de l
 | 3 | État | Zustand. |
 | 4 | Node.js | 24. |
 | 5 | CSS | Natif, approche utilitaire "à la Tailwind" : classes écrites à la main, zéro dépendance. |
+| 6 | Frontière des données (2026-11-10) | Yjs : contenu des notes (texte, blocs). Dexie : métadonnées (titres, dates, tags) et pièces jointes. Zustand : état d'UI seulement (navigation, modales, thème). |
+| 7 | Chiffrement (2026-11-10) | `crypt.ts` conservé tel que porté : nonce compteur, clé par fichier, HKDF. Phrase de 128 bits (28 signes). Vocabulaire public : "Chiffrement AES-GCM", jamais "AES-256". |
+| 8 | CI (2026-11-10) | GitHub Actions `ci.yml` : `npm ci`, `tsc --noEmit`, `npm test`, `vite build`, sur chaque PR et push `main` (`mindspace-core`). |
 
 ### Conséquences relevées par l'audit (inventaire, pas de code)
 
@@ -253,7 +256,8 @@ Ordre conseillé : scan de secrets, correction de la licence, vérification de l
 **3. Zustand**
 - Source : `notes-v3/src/store.ts` (10 Ko, `^5.0.16`). `MindSpace` n'a aucun store : l'état vit dans `App.tsx` (36 Ko).
 - Ajoute une dépendance d'exécution à `MindSpace`. Ratio d'utilité : non mesuré (règle utilisateur : proche de 100 %).
-- Non spécifié : frontière entre l'état Zustand et les données Dexie / Y.Doc. À définir avant de porter `store.ts` (modèle de données différent : objets Markdown dans v3, documents Yjs dans MS).
+- Frontière tranchée le 2026-11-10 (décision 6) : Zustand = UI seulement. `notes-v3/src/store.ts` mêle données et UI : ne pas le porter tel quel, séparer avant de porter.
+- Non spécifié : format et resynchronisation du miroir dérivé du contenu Yjs dans Dexie (`editorJson`, `body`), dont dépendent recherche, aperçus de liste et export.
 
 **4. Node.js 24**
 - Déjà la cible de `MindSpace` (`engines >=24.22.1 <25`), `notes-v5` (24) et `notes-v6` (24.22.2). Hostinger : `node_version` 24 confirmé sur le build `01a1c55e` du 2026-11-10.
