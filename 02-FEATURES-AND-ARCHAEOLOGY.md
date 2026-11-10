@@ -224,11 +224,14 @@ Incompatibilité de modèle (analyse) : v3 stocke des notes Markdown comme objet
 
 ## 10. Questions ouvertes
 
-1. Remplacer `MindSpace/LICENSE` (MIT) par un texte All Rights Reserved ? À faire dans un PR dédié.
-2. Passer `notes-v5` et les autres repos publics en privé ?
-3. OCR et transcription locaux : rester gratuits, ou basculer en payant la qualité supérieure uniquement via API ?
-4. Sync v3 : la porter telle quelle (transport dossier) pour le gratuit, et ajouter un relais géré pour le payant ? Ou ne livrer que le relais ?
-5. Fournisseur d'IA, passerelle d'API, facturation : `non documenté`.
+Tranchées le 2026-11-10 :
+1. `MindSpace/LICENSE` (MIT) remplacé par All Rights Reserved, PR dédiée. Détail : `03`, section 9.1.
+2. `notes-v5`, `notes-4`, `notes-svelte`, `notepad-pwa`, `brandonlazarre` passent en privé après l'audit. Détail : `03`, section 9.2.
+3. OCR et Whisper locaux restent gratuits. L'API vend vitesse, batterie / stockage et modèles plus lourds. Le résumé et toute fonction IA exigent le consentement explicite à l'envoi en clair (`03`, section 8.3).
+4. Sync : transport par dossier d'abord, relais géré payant ensuite, pas d'infrastructure serveur avant validation de l'usage local.
+
+Restent ouvertes :
+5. Fournisseur d'IA, passerelle d'API, facturation, identité légale du titulaire : `non documenté`.
 
 ## 11. Limites
 

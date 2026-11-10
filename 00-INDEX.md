@@ -10,8 +10,8 @@ Statuts utilisés partout : `shipped`, `experimental`, `described only`. Champ i
 | `00-INDEX.md` | Carte des repos, branches, PR, alertes. | écrit |
 | `01-BUSINESS-AND-VISION.md` | MRR, freemium, killer features, personas, doublons à rejeter. | écrit |
 | `02-FEATURES-AND-ARCHAEOLOGY.md` | Matrice features, UI/UX, navigation, PWA, rejets, plan de portage, licence. | écrit |
-| `03-TECH-CONVENTIONS.md` | Nommage, architecture, paquets, dette, CI. | à venir (étape 3) |
-| `05-CHANGELOG.md` | Journal de session. | créé en fin de cycle |
+| `03-TECH-CONVENTIONS.md` | Stack, architecture, nommage, CI, tests, sécurité, contraintes E2E + IA, gouvernance de dépôts, dette. | écrit |
+| `05-CHANGELOG.md` | Journal de session. | écrit |
 
 ## Lignée des itérations (ordre indicatif, déduit des dates de PR et de push)
 
