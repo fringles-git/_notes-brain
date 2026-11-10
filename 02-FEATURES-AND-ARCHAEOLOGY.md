@@ -266,7 +266,7 @@ Méthode : `list_commits` avec `path` sur chaque fichier critique, `get_commit` 
 - Supprimé : dans `server.mjs`, la condition générique `!path.includes('.') && Accept contient text/html`.
 - Remplacé par : `isClientRoute()`, regex `^/settings(?:/[a-z0-9-]+(?:/releases/[0-9a-z.-]+)?)?/?$` plus `^/releases/[0-9a-z.-]+/?$`. Commentaire : "missing assets/API endpoints stay 404".
 - Constat sur `main` : j'ai exécuté la regex. `/settings/a-propos/versions` donne `false`, `/settings/a-propos/quoi-de-neuf` donne `false`. Ces deux routes existent dans `src/main.tsx`. Un rechargement direct tombe dans le 404 JSON du serveur, sauf réécriture côté hébergeur (non vérifiée). `tests/server.test.mjs` (ligne 39) ne teste aucune des deux.
-- Coût : trivial. Élargir la regex à `^/settings(?:/[a-z0-9-]+)*/?$` et ajouter les deux chemins au test.
+- Coût : trivial. Regex proposée : `^/settings(?:/[a-z0-9-]+)*(?:/releases/[0-9a-z.-]+)?/?$`. Elle garde les versions pointées (`/settings/a-propos/releases/6.11.7-7`, `/settings/a-propos/releases/6.11.5.8`). Une version plus simple `^/settings(?:/[a-z0-9-]+)*/?$` casserait ces routes (le point n'est pas dans `[a-z0-9-]`) : elle est à éviter. Testée en Node sur 10 chemins : les deux routes manquantes passent, les routes existantes restent vraies, `/settings/x.html` reste faux. Ajouter au test `tests/server.test.mjs` les deux nouvelles routes et une version pointée.
 
 **M3. MindSpace : service worker réseau d'abord. Verdict : partiellement supérieure. [patch lu]**
 - Commit : `1392b09`, PR #19, 2026-11-05. `mindspace-static-v1` devient `mindspace-static-v2`.
