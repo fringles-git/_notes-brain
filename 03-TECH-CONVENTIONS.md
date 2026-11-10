@@ -1,0 +1,239 @@
+# 03 : Conventions techniques
+
+Audit du 2026-11-10. Sources : `package.json`, workflows, docs et PR des 9 repos. Inventaire et contraintes : aucun correctif de code ici.
+Versions = plages de `package.json` sauf mention (lockfiles non lus).
+
+## 0. Décisions qui contraignent la technique (2026-11-10)
+
+1. Licence : propriétaire (All Rights Reserved). Une PR dédiée remplace `MindSpace/LICENSE` (section 9).
+2. Repos publics `notes-v5`, `notes-4`, `notes-svelte`, `notepad-pwa`, `brandonlazarre` : passage en privé après l'audit (section 9).
+3. Local gratuit à 100 %, y compris OCR et Whisper. L'API payante vend vitesse, économie de batterie et de stockage, meilleurs modèles côté serveur.
+4. Sync : livrer d'abord le transport par dossier (File System Access API) pour valider l'usage. Relais géré payant ensuite. Aucune infrastructure serveur avant validation de l'usage local.
+5. Règle E2E + IA : le chiffrement reste la norme pour la sync et le stockage. Toute fonction IA (ex : résumé) envoie du contenu en clair au serveur. L'utilisateur doit y consentir explicitement.
+
+Base de code cible : métier de `notes-v3`, UI / Tiptap / Yjs de `MindSpace`.
+
+## 1. Stack par repo
+
+| Repo | UI | État / stockage | Éditeur | Build | TypeScript | Node |
+|---|---|---|---|---|---|---|
+| `notes-v3` | React `^19.3.1` | Zustand `^5.0.16`, IndexedDB brut | Markdown maison (`markdown.ts`, `table.ts`) | Vite `^8.3.5`, plugin-react `^6.1.2` | `^7.0.2` | 22 (CI) |
+| `MindSpace` | React `^19.3.1`, react-router-dom `^7.18.5` | Dexie `^4.4.7`, yjs `^13.6.33`, y-indexeddb `^9.0.12` | Tiptap `^3.32.3` (react, pm, starter-kit, collaboration, placeholder, table, text-align), `@tiptap/y-tiptap ^3.1.0` | Vite `^8.3.6`, plugin-react `^6.2.1`, Tailwind `^4.3.4` | `^7.0.2` | `>=24.22.1 <25` |
+| `notes-v5` | React 19.3.1 | Zustand 5.1.0, Dexie `^4.4.7`, dexie-export-import 4.4.2, zod 4.6.7, date-fns 4.4.0 | Tiptap 3.33.0 | Vite 8.3.6, plugin-react 6.2.1 | 6.0.3 | 24 |
+| `notes-v6` | Svelte 5.57.3, SvelteKit 3.1.1, adapter-static 4.0.1 | IndexedDB natif | `@paddim8/svelte-lexical 0.6.8` (usage non vérifié) | Vite 8.3.5, vite-plugin-svelte 7.3.1 | 6.0.3 | 24.22.2 |
+| `notes-aistudio` | React `^19.3.1` | Zustand `^5.0.16`, IndexedDB brut | Markdown maison | Vite `^8.3.5` | `^7.0.2` | non documenté |
+| `notes-4` | Svelte `^5.57.2`, SvelteKit `^3.1.0` | localStorage | — | Vite `^8.3.5`, adapter-static `^4.0.0` | `^6.0.3` (épinglé) | 22 (Hostinger) |
+| `notes-svelte` | Svelte `^5.57.2`, SvelteKit `^3.1.0` | Dexie `^4.4.6` | — | Vite `^8.3.5`, vite-plugin-pwa `^2.0.0` | `^7.0.2` | non documenté |
+| `notepad-pwa` | JS vanille | localStorage | — | Vite `^5.4.10` | — | 20 (Pages) |
+| `brandonlazarre` (`notes-v3` branche) | React `^19.1.0` | Zustand `^5.0.0` | Markdown maison | Vite `^7.1.0` | `^5.9.0` | non documenté |
+
+Éléments communs : Playwright `^1.64.1` (v3, MS, v6), polices Figtree (v3, aistudio, v6, MS non), Lucide (MS 1.69, v6 1.66, svelte 1.61, v5 1.70).
+
+Divergences à connaître avant un portage v3 vers MS :
+- Node 22 (CI v3) contre Node 24 (engines MS).
+- Markdown en chaîne (v3) contre documents Tiptap/Yjs (MS).
+- IndexedDB brut `NotesAppDB` (v3) contre Dexie + une base `y-indexeddb` par note (MS).
+- Zustand (v3) contre état React local dans `App.tsx` de 36 Ko (MS).
+- CSS natif moderne sans Tailwind (v3) contre Tailwind 4 + `style.css` de 39 Ko (MS).
+
+## 2. Architecture
+
+### notes-v3 (référence métier)
+- Modules plats `src/*.ts` : `actions` (41 Ko), `features` (42 Ko), `markdown`, `media`, `gestures`, `tidy`, `sync`, `syncApp`, `syncApply`, `crypt`, `vault`, `diff`, `ics`, `search`, `table`, `tables`, `store`, `db`, `storage`, `i18n`, `config`, `changelog`, `types`, `utils`, `sw.js`.
+- UI : `src/ui/*.tsx`. Styles : `src/styles/` (`tokens.css`, `looks.css`, `app.css` de 96 Ko). Textes : `src/locales/`.
+- Tâches lourdes (pdf.js, Tesseract, ONNX/Whisper, PptxGenJS) chargées à la demande depuis `public/vendor`.
+- Pas de routeur : `state.page` + hash `#/reglages/<section>`, `#n=`, `?new=`.
+
+### MindSpace (référence UI)
+- `src/App.tsx` (36 Ko) monolithe. Dossiers : `components/`, `data/`, `hooks/`, `layouts/`, `pages/`, `styles/`, `types/`. Fichiers clés : `db.ts`, `appearance.ts`, `agentTools.ts`, `data/{noteSearch,backupImport,quickCapture,changelogData}.ts`.
+- `server.mjs` : `node:http` sans Express. Sert l'app, le shell SPA pour `/settings/…` et `/releases/…`, négociation `Accept: text/markdown`, en-têtes Link, `POST /mcp` (lecture seule, informations produit), `/.well-known/mcp/server-card.json`. 404 JSON sinon.
+- Hostinger : preset Express, entrée `hostinger.mjs`, `postinstall: npm run build`.
+- Docs : `DESIGN_SYSTEM.md`, `COLLABORATION_MIGRATION.md`, `EDITOR_MIGRATION.md`, `AGENT_READINESS.md`, `DISCOVERABILITY.md`, `IMPLEMENTATION.md`, `HOSTINGER_NODE_DEPLOY.md`.
+
+### notes-v5
+- Store `page` sans routeur. `src/notes/` (stockage, `vault.ts`, `features.ts`). Scripts : `build-sw.mjs`, `check-sw.mjs`, `check-release.mjs`. Docs : `storage-migration`, `technical-snapshots`, `portable-import`, `contextual-navigation`, `navigation-editor`, `dependency-release-review`, `persistence-retry-review`, `design-teardown`, `design-remediation-plan`.
+
+### notes-v6
+- `src/lib/notes/{db,crypto}.ts`, routes prérendues, `Workspace.svelte` (30 Ko), service worker Kit. Docs : `PRODUCT`, `DESIGN`, `UX-AUDIT`, `ACCESSIBILITY`, `SYNC`, `CLEAN-AUDIT`, `docs/architecture-audit.md`, `docs/branch-cleanup.md`.
+
+### Autres
+- `notes-aistudio` : `codebase-model.md` (section 6 : 15 incohérences UI connues), `docs/` (`principles`, `future`, `retention`, `pwa-baseline`, `quality-bar`, `i18n`).
+- `notes-4`, `notes-svelte` : `src/lib/{components,stores,styles}`, alias `$lib` ou `#lib/*`.
+- `notepad-pwa` : `main.js` monolithique.
+
+## 3. Conventions de nommage
+
+### Versions
+| Repo | Schéma | Exemple | Vérifié par |
+|---|---|---|---|
+| `notes-v3` | `YY.M.D.n` (rang de la release du jour) | 26.10.31.10 | `scripts/check-changelog.mjs` |
+| `MindSpace` | `A.MM.J.X` jusqu'à #38, puis `6.11.JOUR-N` (N = PR mergées ce jour, Paris) | 6.11.5.15, 6.11.7-7 | `release-version.yml`, `tests/versioning.test.mjs`, `tests/release-contract.test.mjs` |
+| `notes-v5` | `5.M.J+PR`, affiché `5.M.J.PR` | 5.11.8+15 | `scripts/check-release.mjs` |
+| `notes-v6` | `6.mois.jour.rang` (`APP_VERSION`), `package.json` reste 6.0.0 | 6.10.31.3 | aucun |
+| `notes-4` | `26.10.19.8` (Réglages) | | aucun |
+
+Trois schémas différents pour une même lignée : décision à prendre avant l'unification (section 10).
+
+### Branches et PR
+- v3 : `claude/<sujet>-AAAA-MM-JJ`, puis `ccr-<id>`. v3 déploie depuis `main` uniquement.
+- MindSpace : `feat/<sujet>-AAAAMMJJ`, `fix/`, `chore/`, `ci:`, `style:`, `revert-N-…`, `dependabot/…`. Gabarit de PR : Résumé, Notes de version, Validation. Titres en français.
+- v5 : `claude/new-session-…`, `feat/`, `fix/`, `refactor/`. Titre de PR avec version (#13 à #15).
+- v6 : `feat/`, `fix/`, `chore/`, `docs/`. Trailer `Co-Authored-By` sur les commits Claude. Commits directs sur `main` sans PR (installation, capture, SYNC).
+
+### Identifiants et clés
+- Bases : `NotesAppDB` (v3, v5, aistudio), `mindspace` + `mindspace-note-<id>` (MS), `notes-v6` (v6), `quick-notes-db` (svelte).
+- Caches SW : `notes-<BUILD>`, `notes-share`, `notes-extras` (v3) ; `notes-v5-<hash12>` ; `notes-v6-shell-<v>` / `-assets-<v>` ; `mindspace-static-v2` ; `notes-pwa-${version}` (notes-4).
+- localStorage : `notes:look|accent|theme` (v5), `mindspace-appearance-v1` (MS), `notes-4-state`, `notes-theme`, `quick-notes-theme`, `notepad-pwa-*`.
+- IDs de note : UUID v4 (v5) ; ids numériques hérités conservés ; entités par nom normalisé (aistudio).
+- Formats : `NOTESENC` (`.enc`), `notes-portable/2`, `.notes-snapshot`, `mindspace-local-export` v1, `notes-v6` v2.
+- Tests nommés par code : `TAP-01..03`, `DOCK-360`, `DOCK-52`, `SYNC-01`, `CONFLICT-01`, `ICS-01`, `I18N-01`, `LOOK-01`, `RNG-01` (v3).
+
+### CSS et design
+- Tokens avant valeurs : v3 `tokens.css` + `looks.css` (un look ne fait que repointer des tokens) ; v5 règle "aucun hex ni z-index numérique", échelle `--z-*` ; MS préfixe `--ms-*`, classes `.ms-glass` ; v6 `tokens.css`.
+- Primitif unique : `.ctl` (v5, tailles 34 / 44 / 48 / 58), `Button` / `Dock` / `NoteCard` (notes-4).
+- Règle de rayon : hauteur ÷ 3 (v3, v5). Cibles tactiles ≥ 44 px. Contraste ≥ 4,5:1 (v3, MS), ≥ 7,52:1 pour le texte muté (v6).
+- Sens fixe des couleurs (v3) : ambre = créer / épingler, bleu = sélection, rouge = supprimer, vert = fait.
+- Textes d'interface en français, i18n préparée en v3 uniquement.
+
+## 4. CI / CD et déploiement
+
+| Repo | Workflows | Contrôles | Déploiement |
+|---|---|---|---|
+| `notes-v3` | `deploy.yml` (Node 22) | Chaque PR : check changelog, `npm run smoke` (chaîne de 11 tests node, build, `sw-regression`, `smoke.mjs`). Push `main` : `deploy -- --prebuilt` | Build écrit sur `notes-v3-site`, tiré par Hostinger. Rollback : `--rollback <version>`. Règle changelog : échec si `src/` ou `public/` changent sans `changelog.ts`, sauf `[no changelog]` |
+| `MindSpace` | `dependency-ci.yml`, `design-system-ci.yml` (Playwright en `workflow_dispatch`), `release-version.yml`, `dependabot-auto-merge.yml` | `tsc --noEmit`, build, `node --test tests/*.test.mjs` | Hostinger Node (Express preset). `release-version` incrémente `package.json` et `changelogData.ts` après merge (commit `[skip ci]`) |
+| `notes-v5` | `verify.yml` (PR), `publish-site.yml` (push `main`) | check, lint, test, build, `check-sw` ; `check-release` impose version = PR | `dist/` poussé sur `notes-v5-site`, servi par Hostinger |
+| `notes-v6` | `ci.yml` | check, test (6 scripts), build, Playwright Chromium, smoke | non documenté |
+| `notes-4` | `.hostinger/site.json` (nodejs, Node 22) | aucun test | auto-déploiement Hostinger, sortie `build/` |
+| `notepad-pwa` | `.github/workflows/static.yml` | Node 20, `npm ci` | GitHub Pages, `dist` |
+| `brandonlazarre` | actions héritées | — | Hostinger tire `notes-v3-site` (`notes-v3.brandonlazarre.fr`) |
+
+- Dependabot : MS quotidien 06:00 Paris (référence encore `@blocknote/*`) ; v5 hebdomadaire lundi 09:00 UTC, groupes production et développement. Les labels `dependencies` et `automated` n'existent pas dans plusieurs repos.
+- Actions anciennes : `design-system-ci.yml` (MS) reste sur `actions/*@v4`, d'où PR #46 et #47 ouvertes.
+- Règle de clôture de l'utilisateur : hash du build en ligne et CI verte avant de déclarer terminé. `version.json` (v3), `build-info.json` (v5), `version` du cache (v6) servent de preuve.
+
+## 5. Tests
+
+| Repo | Unitaires / node | Navigateur | Lacunes |
+|---|---|---|---|
+| `notes-v3` | 11 scripts `tests/*.mjs` (tokens, contrast, table, tidy, search, crypt, folder, sync, diff, ics, i18n) | `smoke.mjs` (82 Ko), `sw-regression.mjs` | RNG-01 instable ; pas d'appareil réel (undo iOS, colonne collante Safari) ; smoke complet souvent "laissé à la CI" |
+| `MindSpace` | `node --test tests/*.test.mjs` (backup, collab, markdown-export, note-search, templates, quick-capture, sw, server, versioning…) | Playwright : `*.spec.ts` (responsive, a11y axe, persist, settings…) | Playwright hors CI de PR ; convergence Yjs locale seulement |
+| `notes-v5` | Vitest 5.1.0, jsdom, fake-indexeddb | `docs/shots/verify.mjs` (716 passages de contraste) | rien sur Android ou iPad ; 44 erreurs de lint à #10 puis 0 |
+| `notes-v6` | 6 scripts dans `npm test` | Playwright, `tests/focus.mjs` | rendus 390 / 1280 px seulement ; pas de Lighthouse |
+| `notes-4`, `notes-svelte`, `notepad-pwa` | aucun | aucun | |
+
+## 6. Dépendances et ratio d'utilité
+
+Aucun repo ne mesure le ratio code utilisé / code téléchargé. Seuls ces faits sont établis.
+
+| Repo | Constat | Source |
+|---|---|---|
+| `notes-v3` | 4 dépendances d'exécution. Bibliothèques lourdes à la demande. Ratio élevé | `package.json` |
+| `notes-v5` | Scaffold non utilisé : 26 paquets Radix, Tailwind 4.3.5 (non activé dans `vite.config.ts`), recharts, react-day-picker, react-hook-form, sonner, lucide. Chunk Tiptap > 500 Ko | `docs/dependency-release-review.md` |
+| `notes-v6` | `vite-plugin-pwa`, `shadcn-svelte`, `svelte-lexical` apparemment inutilisés (non vérifié) | digest v6 |
+| `MindSpace` | Chunk éditeur > 500 Ko. `tailwind-merge`, `tw-animate-css` : usage non vérifié | PR #21 |
+| `notepad-pwa` | `docx` et `jspdf` dans le bundle principal | `package.json` |
+| `notes-4`, `notes-svelte` | zéro dépendance d'exécution (`notes-4`) | |
+
+Règle utilisateur applicable : toute nouvelle dépendance se justifie par un ratio proche de 100 %, sinon fonction native. Candidats à vérifier avant le portage : `tailwind-merge`, `tw-animate-css`, `react-router-dom` (routes limitées à Réglages).
+
+Pins de sécurité : `rolldown 1.2.1`, `esbuild >= 0.28.1`, `cookie >= 0.7.0` (v5). TypeScript 7 est bloqué en v5, v6, notes-4 (peer deps Kit 3 `^6`, typescript-eslint `<6.1.0`). v3 et MS l'utilisent déjà. `@types/node` 26 avec runtime Node 24 : désaccord documenté en v5.
+
+## 7. Sécurité et cryptographie
+
+| Élément | Paramètres | Où |
+|---|---|---|
+| Sauvegarde `.enc` | Conteneur `NOTESENC`, AES-256-GCM, blocs 1 Mio, phrase de récupération 128 bits en 28 signes | v3 `crypt.ts` ; v5 `notes-portable/2` |
+| JSON avec notes masquées | PBKDF2 600 000 itérations, code de 20 signes | v3 #4 |
+| Coffre | Clé enveloppée par PIN ou Face ID, ECDH P-256 + AES-GCM, WebAuthn PRF | v3 `vault.ts`, aistudio |
+| Sauvegarde v6 | AES-GCM, PBKDF2-SHA256 600 000, passphrase ≥ 12 caractères. Protège le fichier, pas la base locale | v6 `crypto.ts` |
+| Sync | Fichiers `manifest.enc`, `n-<hmac>.enc`, `a-<hmac>.enc` (noms opaques), tombstones 90 jours, vecteurs de version. Notes masquées jamais synchronisées | v3 #17 |
+| Snapshot v5 | Contient le matériel du coffre, non chiffré, confirmation `RESTAURER`, plafond 64 Mio | v5 #11 |
+
+Limites d'import : MS 16 Mio / 5000 éléments (aperçu), 50 Mo (remplacement), 50 fichiers × 2 Mio (Markdown/TXT) ; v5 64 Mio ; v6 50 000 entrées / 100 Mo / pièces jointes 5 Mo. Nœuds Tiptap en liste blanche, liens `http(s)` et `mailto` seulement (MS `backupImport.ts`).
+
+Points ouverts :
+- `MindSpace` `POST /mcp` sans limitation de débit ni authentification (informations publiques).
+- Contact et identité légale de l'éditeur non renseignés (`legal.html`, `AGENT_READINESS.md`).
+- Le champ `hidden` de MS n'est pas chiffré. Le nom "masquée" laisse croire le contraire.
+- Aucun scan de secrets exécuté sur les 9 repos. À faire avant le passage en privé. `notes-4/.hostinger/site.json` contient un identifiant Hostinger (non reproduit ici).
+
+## 8. Contraintes d'architecture issues des décisions (aucune implémentation existante)
+
+### 8.1 Phasage
+1. Phase 1 : sync par dossier (File System Access API) portée de v3 vers MindSpace. Valide l'usage. Chromium seulement. Aucune infrastructure serveur.
+2. Phase 2 : relais géré payant, après validation de la phase 1.
+3. Phase API : après le compte. Chaque requête consomme du quota.
+
+### 8.2 Compte et usage (absent partout)
+Exigences à spécifier avant de coder, `non documenté` aujourd'hui : identité, entitlements par palier (L / C / A), mesure d'usage, quotas et plafonds, facturation, récupération de compte face à la phrase de récupération E2E, suppression des données.
+
+### 8.3 Règle E2E + IA
+- Sync et stockage : chiffrés de bout en bout, serveur aveugle.
+- Fonction IA (ex : résumé, OCR serveur, transcription serveur) : le contenu part en clair vers le serveur. Consentement explicite requis à l'activation de chaque fonction IA, rappelé à l'usage, révocable.
+- Le consentement ne s'étend pas : activer le résumé ne déverrouille pas l'OCR serveur.
+- Notes masquées : exclure de toute requête IA par défaut (analyse, cohérent avec leur exclusion de la sync).
+- Journaliser côté client la liste des envois ; côté serveur ne pas conserver le contenu (à confirmer avec le fournisseur d'IA, `non documenté`).
+- OCR / Whisper locaux : restent le chemin par défaut, gratuit, sans compte. L'API vend vitesse, batterie, stockage, qualité de modèle.
+
+### 8.4 Pont sync entre v3 et Yjs
+- v3 : objets note + vecteurs de version + tombstones. MS : un Y.Doc par note.
+- Pour le transport par dossier, deux options à arbitrer : synchroniser le miroir `editorJson` (perd la fusion fine), ou synchroniser les mises à jour Yjs (incompatible avec `sync.ts` tel quel). Risque très élevé (MS #31).
+- Les sauvegardes MS ne contiennent pas l'historique Yjs (`docs/COLLABORATION_MIGRATION.md`).
+
+## 9. Gouvernance de dépôts : actions décidées
+
+### 9.1 Licence MindSpace (PR dédiée)
+- Remplacer `LICENSE` (MIT, "MindSpace contributors") par un texte All Rights Reserved.
+- Références MIT à aligner dans la même PR : `IMPLEMENTATION.md:17`, `public/llms.txt:10`, `public/mindspace.md:29`, `public/legal.html` ("Le code de MindSpace est publié sous licence MIT" + lien vers un repo privé), `public/about.html`, `public/contact.html`. Ajouter `"license": "UNLICENSED"` à `package.json` (champ absent).
+- Aucun test n'asserte "MIT". `src/data/changelogData.ts:293` raconte l'ajout de la licence MIT (historique, à ne pas réécrire).
+- Le titulaire du copyright doit être précisé (le repo ne contient aucune identité légale).
+
+### 9.2 Passage en privé
+Cibles : `notes-v5`, `notes-4`, `notes-svelte`, `notepad-pwa`, `brandonlazarre`. Aucun outil GitHub MCP de cette session ne change la visibilité d'un repo : action manuelle (Settings › Danger Zone) ou autre canal.
+Points à vérifier avant chaque passage :
+- `notes-4` : auto-déploiement Hostinger depuis GitHub (`.hostinger/site.json`).
+- `brandonlazarre` : Hostinger tire `notes-v3-site` pour `notes-v3.brandonlazarre.fr`.
+- `notes-v5` : Hostinger sert `notes-v5-site`.
+- `notepad-pwa` : GitHub Pages via `static.yml`. Pages sur repo privé dépend du plan (non vérifié).
+- Liens publics qui pointent vers ces repos (`legal.html` pointe déjà vers `MindSpace`, privé : 404 pour les visiteurs).
+- Dependabot et Actions : quotas de minutes pour repos privés.
+Ordre conseillé : scan de secrets, correction de la licence, vérification de la prise en charge de repos privés par Hostinger, puis privatisation un repo à la fois avec contrôle du déploiement.
+
+## 10. Dette technique consolidée
+
+| Repo | Dette |
+|---|---|
+| `notepad-pwa` | Fichiers permutés à HEAD ; chemins absolus ; bundle lourd ; pas de PR |
+| `notes-svelte` | Layout et page permutés ; import `lucide-svelte` erroné ; menu rapide en doublon |
+| `notes-4` | SW sans repli dédié ; Svelte 4 et 5 mélangés ; pas de test |
+| `notes-aistudio` | Chunk 212 Ko gzip pour un budget de 170 ; `SettingsPage.tsx` 59 Ko ; i18n incomplet ; docs contradictoires sur le SW |
+| `brandonlazarre` | TAP-01 instable ; clé `fix:` dupliquée qui a cassé `tsc` ; `AUDIT.md` / `REQUIREMENTS.md` cités mais absents |
+| `notes-v3` | `smoke.mjs` 82 Ko, `app.css` 96 Ko ; JSON en data URLs ; 374 chaînes FR en dur ; sync Chromium seulement |
+| `notes-v5` | Dépendances de scaffold ; pas de journal durable ; export en mémoire 64 Mio ; `theme_color` ≠ `index.html` ; partage OS cassé |
+| `notes-v6` | `Workspace.svelte` 30 Ko ; PJ en data URL ; pas d'historique ; pas de purge corbeille ; commits directs sur `main` ; 4 branches non mergées |
+| `MindSpace` | `App.tsx` 36 Ko ; pas de lockfile ; README vide ; `changelogData.ts` périmé ; `dependabot.yml` BlockNote ; Playwright hors PR ; `DISCOVERABILITY.md` périmé ; MIT contradictoire |
+
+## 11. Synthèse évolutive : conventions à conserver ou à trancher
+
+À conserver (déjà éprouvées) :
+- Contrôle de changelog sur toute modification d'app (v3).
+- Version liée à la PR et vérifiée en CI (v5, MS).
+- Tokens seuls, aucun hex ni z-index numérique (v5).
+- Portes d'accessibilité : contraste, cibles 44 px, piège de focus (v3, v6, MS).
+- Précache atomique et refus des réponses non-2xx (v6, v3).
+- Sauvegarde de sécurité avant import, aperçu avant écriture (v5, MS).
+
+À trancher (vous décidez) :
+1. Schéma de version unique : `YY.M.D.n`, `6.11.JOUR-N` ou `5.M.J+PR` ?
+2. Politique SW : `skipWaiting` automatique (MS) ou toast manuel (v3, v5). Avec Yjs, un onglet ancien peut écrire avec un ancien code (risque documenté en v5 `technical-snapshots.md`).
+3. Zustand (v3) ou état local (MS) pour le port.
+4. Node 22 ou 24 comme cible CI.
+5. Tailwind 4 (MS) ou CSS natif (v3).
+
+## 12. Limites
+
+- Aucun lockfile lu ; versions exactes non vérifiées.
+- Pas d'exécution des tests ni de l'app ; pas de hash de build en ligne vérifié.
+- Pas de scan de secrets.
+- `MindSpace/src/{components,pages,hooks,layouts}` et `notes-v3/src/ui` non parcourus fichier par fichier.
+- Statut CI GitHub de `_notes-brain` : non vérifié (aucun workflow dans ce repo).
