@@ -238,6 +238,7 @@ Ordre conseillé : scan de secrets, correction de la licence, vérification de l
 | 7 | Chiffrement (2026-11-10) | `crypt.ts` conservé tel que porté : nonce compteur, clé par fichier, HKDF. Phrase de 128 bits (28 signes). Vocabulaire public : "Chiffrement AES-GCM", jamais "AES-256". |
 | 8 | CI (2026-11-10) | GitHub Actions `ci.yml` : `npm ci`, `tsc --noEmit`, `npm test`, `vite build`, sur chaque PR et push `main` (`mindspace-core`). |
 | 9 | Design system (2026-11-11) | Design flat : ni glassmorphism, ni `backdrop-filter`, ni transparence, ni ombre. Palette officielle clair / sombre dans `mindspace-core/src/styles/tokens.css` (`bg`, `text`, `accent` ambre, `accent-pro` lilas, `surface`, `border`), seul fichier qui contient des hex. Garde automatique : `tests/tokens.test.ts`. |
+| 10 | Sauvegarde chiffrée (2026-11-11) | Un fichier `.enc` (conteneur `NOTESENC`) autour d'un JSON `mindspace-core-backup` v1 : métadonnées Dexie + texte courant de chaque note en JSON ProseMirror (pas d'historique Yjs). Phrase de 28 signes créée au premier export, enregistrée sur l'appareil avant que le fichier parte, affichée masquée par défaut avec Copier. Un seul chemin d'import futur, qui lit ce format. |
 
 ### Conséquences relevées par l'audit (inventaire, pas de code)
 

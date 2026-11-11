@@ -332,6 +332,7 @@ Méthode : `list_commits` avec `path` sur chaque fichier critique, `get_commit` 
 - Constat : `git grep lastBackup` sur `notes-v5` ne montre que des lectures (`features.ts:421,530`, `List.tsx:49,60`, `Sheets.tsx:207,235`) et la déclaration de type. Aucune écriture. Après une sauvegarde portable ou un snapshot, le rappel de sauvegarde (`backupNagDays`) continue de s'afficher et "Dernière" reste "Jamais".
 - Raison de la PR : parle de l'import, pas de ces effets de bord.
 - Coût : très faible. Deux appels après le téléchargement réussi, dans `PortableBackup.tsx` et `SnapshotTools.tsx`.
+- Traité le 2026-11-11 dans `mindspace-core` : `src/backup/exportBackup.ts` écrit `lastBackup` et demande `persist()` après le téléchargement ; test `tests/backup.test.ts`. `notes-v5` reste inchangé.
 
 **V6. notes-v5 : widgets Recap de l'accueil. Verdict : partiellement supérieure. [patch lu]**
 - Commits : `32e9bd9` (PR #14) puis `f1b5160` (PR #15), 2026-11-08.

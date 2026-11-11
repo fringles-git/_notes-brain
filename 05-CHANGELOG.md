@@ -139,3 +139,15 @@
 - Contrastes mesurés (clair / sombre) : texte sur fond 16,5 / 17,1 ; texte sur surface 17,4 / 15,3 ; texte atténué sur surface 6,7 / 7,3 ; "+" sur ambre 10,6 ; onglet actif 16,5 / 17,1.
 - Points faibles de la palette demandée : `--ms-border` ne fait que 1,2:1 (clair) et 1,3:1 (sombre) sur surface, utile en séparation seulement ; le lilas fait 2,1:1 sur fond clair, inutilisable en texte ou en anneau de focus clair ; l'ambre sur surface claire fait 1,6:1, le "+" ne s'identifie que par son glyphe. La sélection de texte garde la couleur native du navigateur.
 - Non vérifié : appareil réel, lecteur d'écran, mode contraste forcé (CSS écrit, non rendu), hash de build en ligne (aucun déploiement).
+
+## 2026-11-11 : sauvegarde chiffrée de mindspace-core (fiche V5)
+
+- `mindspace-core` commit `0a15c7c` poussé directement sur `main` sur ordre explicite. `src/backup/` (export, lecture, validation, phrase), `BackupSection` et `RecoveryPhrase` dans Réglages, Dexie v3 (table `prefs`), 25 tests ajoutés.
+- Redondance vérifiée : `notes-v3` a déjà ce flux (`exportEncrypted` : phrase gardée sur l'appareil, enregistrée avant le téléchargement, puis `lastBackup` et `persistStorage`). Logique portée sur le modèle Yjs + Dexie, pas copiée : le contenu vient des Y.Doc, pas d'un store.
+- Fiche V5 traitée : `lastBackup` et `persist()` après le téléchargement. Décision 10 ajoutée à `03`.
+- Format : JSON `mindspace-core-backup` v1 (`id`, `title`, `createdAt`, `updatedAt`, `content`) dans un conteneur `NOTESENC`. `content` = texte courant en JSON ProseMirror. Choix : pas de mises à jour Yjs brutes, qui embarqueraient l'historique et le texte supprimé.
+- Phrase de 28 signes créée au premier export, réutilisée ensuite. Affichage masqué par défaut, clair à la création et sur demande, "Copier" fonctionne masquée. Compromis assumé : elle est stockée en clair dans IndexedDB à côté des notes (v3 faisait pareil) ; elle protège le fichier, pas l'appareil.
+- Vérifié en local (Node 24.22.1) : `tsc --noEmit`, 86 tests, `vite build`. Chromium 390 px, vrai téléchargement : `mindspace-notes-2026-11-11.enc` ; fichier relu avec `readBackup` du projet, 2 notes identiques (accents, emoji, guillemets), aucun texte en clair dans les octets, mauvaise phrase refusée ; phrase absente du DOM quand masquée, copie vérifiée dans le presse-papiers, même phrase après rechargement et au second export, aucun avertissement au second export ; aucune note : pas de fichier, pas de phrase ; boutons 44 px de haut ; aucune erreur console.
+- Un `persist()` demandé : `persisted()` reste `false` en Chromium headless (le navigateur n'accorde pas sans critère d'engagement). Effet réel non vérifié sur appareil.
+- Limites : tout est en mémoire (pas de plafond ni de flux ; rien de lourd n'existe, pas de pièce jointe), pas de rappel à 14 jours, pas d'écran de restauration (le chemin d'import unique reste à écrire), un fichier abîmé d'un seul chunk est signalé "clé" (comportement de `crypt.ts`).
+- Non vérifié : appareil réel, lecteur d'écran, hash de build en ligne (aucun déploiement).
