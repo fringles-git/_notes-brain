@@ -227,8 +227,11 @@ Décisions du propriétaire consignées dans `03` : 21 (Hostinger construit avec
 Sprint en cours, quatre PR séparées sur `main`, aucune mergée par moi
 - PR-a #22 (mergée par le propriétaire) : titre dérivé affiché dans la liste. Écart voulu avec la demande : pas d'écriture dans `notes.title` ni de migration v6 (le titre dérivé existait déjà dans l'index, jamais réécrit ; « Sans titre » n'est plus stocké depuis la v2).
 - PR-b #23 : recherche sur l'index dérivé (début de mot, casse et accents ignorés, surlignage).
-- PR-c #24 : suppression multiple (une transaction, même flux de purge).
+- PR-c #24 (mergée par le propriétaire) : suppression multiple (une transaction, même flux de purge).
 - PR-d #25 : rappel de sauvegarde à 14 jours (bannière, « Plus tard », aucun jeton ajouté).
+- Constat de revue (Codex, P2) sur #25 : le rappel n'était réévalué que sur écriture de réglage ; corrigé (réévaluation au retour au premier plan et à l'instant d'échéance, `reminderDueAt`, scénario S20 avec liste ouverte).
+- Recherche et sélection ne se combinent pas (décision de conception dans #23 après le merge de #24) : champ caché pendant la sélection, « Sélectionner » non proposé pendant une recherche ; à reprendre seulement si le besoin apparaît.
+- #23 et #25 touchent tous deux `NotesList.tsx` et les scénarios : le second à merger demandera un merge de `main` (trivial, je le fais).
 - Décision 24 dans `03`. Détails dans `mindspace-core/CLAUDE.md`.
 
 Trouvailles
