@@ -237,6 +237,7 @@ Ordre conseillé : scan de secrets, correction de la licence, vérification de l
 | 6 | Frontière des données (2026-11-10) | Yjs : contenu des notes (texte, blocs). Dexie : métadonnées (titres, dates, tags) et pièces jointes. Zustand : état d'UI seulement (navigation, modales, thème). Implémentée dans `mindspace-core` (2026-11-10) : Dexie `notes` (id, title, createdAt, updatedAt), un Y.Doc par note via `y-indexeddb`, Zustand = id de la note ouverte. L'exception temporaire `draftStore` a été supprimée. |
 | 7 | Chiffrement (2026-11-10) | `crypt.ts` conservé tel que porté : nonce compteur, clé par fichier, HKDF. Phrase de 128 bits (28 signes). Vocabulaire public : "Chiffrement AES-GCM", jamais "AES-256". |
 | 8 | CI (2026-11-10) | GitHub Actions `ci.yml` : `npm ci`, `tsc --noEmit`, `npm test`, `vite build`, sur chaque PR et push `main` (`mindspace-core`). |
+| 9 | Design system (2026-11-11) | Design flat : ni glassmorphism, ni `backdrop-filter`, ni transparence, ni ombre. Palette officielle clair / sombre dans `mindspace-core/src/styles/tokens.css` (`bg`, `text`, `accent` ambre, `accent-pro` lilas, `surface`, `border`), seul fichier qui contient des hex. Garde automatique : `tests/tokens.test.ts`. |
 
 ### Conséquences relevées par l'audit (inventaire, pas de code)
 
