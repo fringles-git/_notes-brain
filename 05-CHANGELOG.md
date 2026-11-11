@@ -202,3 +202,19 @@ Sprint suivant (décisions du propriétaire), une PR chacune, toutes basées sur
 - Trouvailles : le premier test du routeur ne voyait pas la mutation de la garde (le cas de la paire de stores à moitié mise à jour n'était pas couvert) ; la cible « initial sous 300 Ko gzip » était déjà atteinte avant le découpage, et la reconstruction de l'index au démarrage ramenait le gros chunk dans le chargement de départ (séparée par une vérification légère).
 - Décisions ajoutées à `03` : 17 à 20 ; 8, 13 et 16 précisées. Un push forcé sur une branche déjà mergée a été refusé par le garde-fou : branches neuves à la place.
 - Hors périmètre, non attaqué (consigne) : `dexie-react-hooks` (hook maison gardé), dérivation du titre, recherche, suppression multiple, rappel 14 jours, points visuels (sprint design), `persist()`, `viewport-fit`, appareil réel, lecteur d'écran (sprint avant production). Secret scanning : activé par le propriétaire, tenu pour acquis.
+
+
+## 2026-11-11 (fin) : sprint suivant mergé, deux constats de revue corrigés
+
+État
+- Mergées par le propriétaire : #15 à #19 (mindspace-core) et #15 (cerveau). Le merge de `main` dans #17 avait perdu le paramètre `danger` de `ConfirmDialog` (tsc et build rouges) : réparé avant le merge (c5ae85a), puis conflits de #19 résolus (S14 puis S15 conservés). `main` à `4fd5827` : CI verte (run 55), `build.json` en ligne = sha de `main` (version 6.11.11-1, borne basse, décision 17).
+- Environnement : Node 22 passait avant Node 24 dans le PATH de la session ; 2 tests (`navigator.locks`) échouaient pour cette seule raison. Les vérifications locales utilisent `/opt/node24/bin`.
+
+Constats de revue Codex, tous deux valides, deux PR séparées sur `main`
+- #20 routeur : une recherche d'existence périmée écrasait la destination suivante (retour puis retour, ou clic pendant un retour). Compteur de navigation ; 2 tests, mutations vérifiées.
+- #21 chargement à la demande : un onglet survivant à une mise à jour démontait l'app quand il demandait un chunk disparu. `LoadBoundary` + scénario S16 (16 scénarios) ; mutation vérifiée. Visuel du message à arbitrer par le propriétaire.
+- Décisions 19 et 20 précisées dans `03`.
+
+Restent ouverts
+- Merge de #20 et #21 : propriétaire, après CI verte.
+- Déploiement par la CI du dossier `dist/` pour une version exacte (sprint dédié) ; `stripTypeScriptTypes` expérimental en Node 24 ; Hostinger construit avec `npm install` (exception à `npm ci`).
