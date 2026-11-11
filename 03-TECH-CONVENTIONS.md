@@ -239,6 +239,7 @@ Ordre conseillé : scan de secrets, correction de la licence, vérification de l
 | 8 | CI (2026-11-10) | GitHub Actions `ci.yml` : `npm ci`, `tsc --noEmit`, `npm test`, `vite build`, sur chaque PR et push `main` (`mindspace-core`). |
 | 9 | Design system (2026-11-11) | Design flat : ni glassmorphism, ni `backdrop-filter`, ni transparence, ni ombre. Palette officielle clair / sombre dans `mindspace-core/src/styles/tokens.css` (`bg`, `text`, `accent` ambre, `accent-pro` lilas, `surface`, `border`), seul fichier qui contient des hex. Garde automatique : `tests/tokens.test.ts`. |
 | 10 | Sauvegarde chiffrée (2026-11-11) | Un fichier `.enc` (conteneur `NOTESENC`) autour d'un JSON `mindspace-core-backup` v1 : métadonnées Dexie + texte courant de chaque note en JSON ProseMirror (pas d'historique Yjs). Phrase de 28 signes créée au premier export, enregistrée sur l'appareil avant que le fichier parte, affichée masquée par défaut avec Copier. Un seul chemin d'import futur, qui lit ce format. |
+| 11 | Suppression et restauration (2026-11-11) | Suppression définitive, sans corbeille, derrière une confirmation. Restauration en deux temps (aperçu puis écriture), strictement additive : note identique ignorée, note différente ajoutée en copie, rien écrasé, donc pas de sauvegarde de sécurité préalable. Texte validé contre le schéma de l'éditeur avant toute écriture. Un seul chemin d'import (`mindspace-core-backup` v1). |
 
 ### Conséquences relevées par l'audit (inventaire, pas de code)
 
