@@ -218,3 +218,27 @@ Constats de revue Codex, tous deux valides, deux PR séparées sur `main`
 Restent ouverts
 - Merge de #20 et #21 : propriétaire, après CI verte.
 - Déploiement par la CI du dossier `dist/` pour une version exacte (sprint dédié) ; `stripTypeScriptTypes` expérimental en Node 24 ; Hostinger construit avec `npm install` (exception à `npm ci`).
+
+
+## 2026-11-11 (suite) : décisions 21 à 23, sprint « liste des notes »
+
+Décisions du propriétaire consignées dans `03` : 21 (Hostinger construit avec `npm install`, écart assumé à `npm ci`), 22 (`stripTypeScriptTypes` : point de vigilance), 23 (déploiement CI de `dist/` différé). Message de rechargement de #21 validé tel quel. Sprint précédent clos : `main` `d317817`, CI verte (run 59), `build.json` en ligne = sha, `check-deploy` ok.
+
+Sprint en cours, quatre PR séparées sur `main`, aucune mergée par moi
+- PR-a #22 (mergée par le propriétaire) : titre dérivé affiché dans la liste. Écart voulu avec la demande : pas d'écriture dans `notes.title` ni de migration v6 (le titre dérivé existait déjà dans l'index, jamais réécrit ; « Sans titre » n'est plus stocké depuis la v2).
+- PR-b #23 : recherche sur l'index dérivé (début de mot, casse et accents ignorés, surlignage).
+- PR-c #24 : suppression multiple (une transaction, même flux de purge).
+- PR-d #25 : rappel de sauvegarde à 14 jours (bannière, « Plus tard », aucun jeton ajouté).
+- Décision 24 dans `03`. Détails dans `mindspace-core/CLAUDE.md`.
+
+Trouvailles
+- Une réécriture de `NotesList` (PR-c) partait d'une version antérieure à #22 et retirait le titre dérivé : le scénario S17 l'a détecté avant le push. À retenir : après un `fetch`, relire un fichier avant de le réécrire en entier.
+- `writeNoteContent` fusionne dans le Y.Doc existant (CRDT) : un test qui « remplace » un texte doit d'abord supprimer la base du texte.
+- S7 (précache) avait une attente qui ne couvrait pas la fin de l'activation du worker : un échec isolé, corrigé (un seul cache par build).
+- Une date future (horloge remise à l'heure) ramenée à « maintenant » aurait rendu le rappel muet jusqu'à cette date : ignorée.
+
+Environnement
+- Node 24 est à `/opt/node24/bin` ; sans lui dans le PATH, 2 tests `navigator.locks` échouent (Node 22 passe avant). Playwright local : `NODE_PATH=/opt/node-tools/node_modules`.
+- Codex a atteint sa limite d'usage : pas de relecture automatique sur #21 et le cerveau #16.
+
+Non attaqué (consigne) : points visuels (sprint design), `persist()`, `viewport-fit`, appareil réel, lecteur d'écran (sprint avant production), erreur d'ouverture d'IndexedDB (décision produit à prendre, pas de timeout spéculatif), `dexie-react-hooks` (hook maison gardé), fenêtre de 300 ms du titre.
