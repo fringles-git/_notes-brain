@@ -114,3 +114,16 @@
 - Limites connues : `y-indexeddb` n'expose pas d'erreur d'ouverture (si IndexedDB est indisponible, la note reste en "Restauration…") ; aucune liste de notes, donc les notes antérieures ne sont pas rouvrables ; `title` reste "Sans titre" (dérivation depuis le contenu = index dérivé non spécifié) ; clavier virtuel et appareil réel non testés ; pas de test navigateur en CI.
 - Dock : marges horizontales des items réduites (16 px vers 12 px) pour tenir à 360 px avec le bouton "+". Décision visuelle du propriétaire en attente (emplacement et forme du "+").
 - Non vérifié : hash de build en ligne (aucun déploiement).
+
+## 2026-11-10 : liste des notes et titre dans mindspace-core
+
+- `mindspace-core` commit `8f85ad2` poussé directement sur `main` sur ordre explicite. `NotesList` réelle (Dexie `liveQuery`), `NotesPage` (liste ou éditeur selon `currentNoteId`), champ Titre dans `NoteEditor`, `closeNote` dans `useNoteStore`, Dock : second appui sur l'onglet Notes = retour à la liste.
+- Changement de comportement : plus aucune note rouverte automatiquement au rechargement, la liste s'affiche. `ensureNote` supprimé (code mort).
+- Dexie v2 : les titres "Sans titre" écrits par la v1 sont vidés. Un titre vide s'affiche "Sans titre", jamais stocké. Création d'une note : titre vide.
+- Écart avec la demande : `dexie-react-hooks` non installé (154 Ko décompressés pour un seul hook utilisé, rapport d'utilité faible). Hook `useNotes` maison sur `liveQuery`, déjà dans Dexie. Réévaluer si d'autres hooks du paquet servent.
+- Titre : enregistré 300 ms après la dernière frappe, et aussitôt à la sortie de la note, au blur, à `pagehide`, à l'onglet masqué (testés). Limite mesurée : un rechargement brutal dans les 300 ms perd les derniers caractères du titre. Le texte du corps (Yjs) n'a pas cette fenêtre.
+- Vérifié en local (Node 24.22.1) : `tsc --noEmit`, 49 tests, `vite build`. Chromium 390 px : état vide au texte exact, "+" ouvre une note vide, titre et texte enregistrés, retour par le bouton et par l'onglet Notes, liste triée par date décroissante, une note éditée remonte en tête, rechargement conserve liste et contenus, effacer le titre affiche "Sans titre", focus sur `<main>` à chaque changement de vue, cibles : bouton retour 80x44, titre 358x44, lignes 358x59, aucune erreur console.
+- Bundle : 847,7 Ko (266 Ko gzip), contre 844,8 Ko. Aucune scission du code.
+- Non vérifié : clavier virtuel mobile, appareil réel, lecteur d'écran, hash de build en ligne (aucun déploiement). Pas de test navigateur en CI.
+- Restent ouverts : dérivation du titre depuis le contenu (index dérivé), suppression et corbeille de notes, recherche, erreur d'ouverture d'IndexedDB (`y-indexeddb`).
+- Décisions visuelles en attente du propriétaire : cartes de la liste (bordure, rayon, ombre absente), format de date, bouton de retour "‹ Notes", taille du champ Titre.
