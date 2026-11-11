@@ -291,6 +291,7 @@ Méthode : `list_commits` avec `path` sur chaque fichier critique, `get_commit` 
 - `backupImport.ts` : liste blanche de nœuds, marques et attributs ; plafonds 16 Mio, 5000 éléments, profondeur 30, 20 000 nœuds ; aperçu et copies avec nouveaux identifiants. Il ne conserve que `heading.level`, `textAlign`, `colspan`, `rowspan`, `colwidth` : il perd donc `orderedList.start` et `codeBlock.language`.
 - Incompatibilité : l'export de la liste (`format: 'mindspace-local-export'`, `version: 1`) est refusé par l'import des Réglages ("Version de schéma inconnue"). L'enveloppe des Réglages (`schemaVersion`, `tables`) est refusée par `inspectMindSpaceBackup`, qui exige `version === 1`.
 - Coût : moyen. Adaptateur de format, et `validate()` des Réglages réutilisant `safeEditorJson` avec les attributs manquants.
+- `mindspace-core` (2026-11-11) : un seul chemin d'import, qui lit `mindspace-core-backup` v1 (`planRestore` / `applyRestore`). La fiche M5 ne s'y applique plus ; elle reste ouverte pour `MindSpace`.
 
 **M6. MindSpace : convertisseur BlockNote vers Tiptap lacunaire. Verdict : l'ancien éditeur n'est pas à restaurer, le convertisseur est à compléter. [patch lu]**
 - Commits : `690b289`, `4b11860`, `dbbcaa2` (2026-11-05), PR #19 puis #21 (merge `a37e3c9`). `src/components/notes/NoteEditor.tsx` (35 lignes, `BlockNoteView`, `blocksToMarkdownLossy`) n'est resté que ~38 minutes dans `main`.
