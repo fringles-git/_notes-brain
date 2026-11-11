@@ -276,6 +276,7 @@ Méthode : `list_commits` avec `path` sur chaque fichier critique, `get_commit` 
 - Perte : `/index.html` n'est mis en cache qu'à l'install et n'est jamais rafraîchi. Déduction non exécutée : les clés SHELL sont les plus anciennes et partent en premier au-delà de 60 entrées.
 - Gain du remplaçant : ne met en cache que `/assets/` et SHELL (moins de contenu mis en cache sans contrôle).
 - Coût : faible. Rafraîchir `index.html` à chaque navigation réussie et exclure SHELL de l'éviction. Cohérent avec la décision `skipWaiting` automatique (`03`, section 11).
+- Traité le 2026-11-11 dans `mindspace-core` (`src/sw.ts`) : `index.html` rafraîchi à chaque navigation réussie, cache du shell sans expiration. Piège constaté en navigateur : avec Workbox, la route de précache répond à `/` avant toute route de navigation enregistrée après elle, et le shell n'est alors jamais rafraîchi (fiche M3 reproduite avec `precacheAndRoute`). Voir `03`, décision 12.
 
 **M4. MindSpace : CI Playwright sur chaque PR. Verdict : supérieure en couverture. [patch lu]**
 - Commits : `#32` (2026-11-06), `#33`, `9c0aab6` (PR #41, 2026-11-07).
