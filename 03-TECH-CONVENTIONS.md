@@ -253,6 +253,45 @@ Ordre conseillé : scan de secrets, correction de la licence, vérification de l
 | 22 | `stripTypeScriptTypes` expérimental (2026-11-11) | Point de vigilance, pas une décision bloquante. `scripts/build-sw.mjs` compile `src/sw.ts` avec `node:module` `stripTypeScriptTypes` (expérimental en Node 24, avertissement masqué). On garde. La borne Node 24 est actée (`engines`) : toute montée de Node impose de relancer le build du worker et de rejouer les scénarios navigateur. |
 | 23 | Déploiement CI de `dist/` (2026-11-11) | Décision différée, pas une dette immédiate. On garde le mode Hostinger actuel (construction sur clone superficiel, version `n` en borne basse, décision 17). À reconsidérer si un incident de déploiement rend la version fausse gênante pour un diagnostic : alors job de déploiement de `dist/` puis `check-deploy` en CI sur le sha de `main`. |
 | 24 | Liste des notes : titre, recherche, sélection, rappel (2026-11-11) | Titre affiché = titre saisi, sinon titre dérivé de l'index, sinon « Sans titre » : affichage seulement, `notes.title` n'est jamais réécrit (une seule couche propriétaire ; pas de migration v6). Recherche par l'index dérivé seulement, correspondance stricte (début de mot, casse et accents ignorés, ET, pas de fuzzy). Suppression multiple : une transaction pour toute la sélection, même flux de purge qu'une note. Rappel de sauvegarde à 14 jours : bannière non bloquante, « Plus tard » repousse de 14 jours, sans jeton ajouté. Visuels proposés par Claude, arbitrage du propriétaire. Détails : `mindspace-core/CLAUDE.md`. |
+| 27 | Tâches v1 (2026-11-12, spec en attente de validation) | L'onglet Tâches est implémenté, pas retiré : le propriétaire a fermé sans fusion `mindspace-core#26` et `_notes-brain#19` (décisions 25 et 26, jamais sur `main` ; ces deux numéros ne sont pas attribués). Table Dexie `tasks` (version 6), onglet, liste, ajout rapide, cocher, supprimer, filtre, lien optionnel vers une note. Récurrence, sous-tâches, échéances avec rappel, `TaskList` / `TaskItem` dans l'éditeur : DEFER. Détail et points à valider : section « Spécification : Tâches v1 ». |
+
+### Spécification : Tâches v1 (décision 27)
+
+Statut : écrite le 2026-11-12, en attente de validation du propriétaire. Aucun code. Une seule PR de code suit la validation.
+
+**Pourquoi**
+- `02` section 1.1 liste « Listes, cases, onglet Tâches » (`notes-v3` #14) comme fonction à livrer. On ne sort pas de v3 tant qu'elle n'est pas livrée.
+- Règle du propriétaire (2026-11-12) : une fonction listée dans `02` et non livrée n'est retirée que sur instruction explicite de changer de cap. En cas de doute, demander ; ne pas recommander le retrait.
+- « Pas de polissage d'enveloppe sans hypothèse chiffrée » (`CLAUDE.md`, produit et MRR) vise l'enveloppe : changelog, SEO, design de Réglages. Le propriétaire a tranché qu'elle ne s'applique pas aux Tâches. Elle ne justifie pas leur retrait.
+- Hypothèse chiffrée : aucune. Fonction locale, gratuite, sans compte (décision du propriétaire 1).
+
+**Modèle de données (Dexie version 6)**
+- `tasks: 'id, noteId, updatedAt'`. Champs : `id` (UUID v4), `noteId` (`string | null`), `text`, `done` (booléen), `dueDate` (`number | null`, epoch ms), `createdAt`, `updatedAt`.
+- Aucun index sur `done` : un booléen n'est pas une clé IndexedDB valide. Le filtre toutes / actives / terminées s'applique au tableau lu par `liveQuery`.
+- La version 6 ajoute la table seule. `notes`, `prefs`, `purgeQueue` et `noteIndex` sont inchangées, la mise à niveau n'écrit rien (pattern des versions 3 à 5 dans `src/db/database.ts`).
+- Une seule couche propriétaire : Dexie possède la tâche entière, texte compris. `noteId` est une référence, jamais une copie du texte de la note.
+
+**Périmètre v1**
+- Onglet Tâches : la page `tasks`, la route `/tasks` et l'onglet du dock existent déjà sur `main` (placeholder « Vue factice »). La PR de code remplace `Tasks.tsx`.
+- Liste, ajout rapide, cocher / décocher, suppression, filtre toutes / actives / terminées, lien optionnel vers une note.
+- Visuel : mise en page et micro-interactions restent au propriétaire. La PR de code propose avec les jetons existants, sans nouveau jeton ; le propriétaire arbitre.
+
+**DEFER**
+- Récurrence, sous-tâches, échéances avec rappel.
+- `TaskList` + `TaskItem` (cases dans l'éditeur) : une case serait à la fois dans le Y.Doc et dans `tasks`, soit deux couches propriétaires pour une même donnée (règle de la section 2 de `CLAUDE.md`). On fait d'abord l'onglet.
+- Écart avec v3 : en v3 les cases vivent dans le texte des notes et l'onglet les agrège (cocher ici coche dans la note). Ici la tâche est une ligne autonome ; aucune agrégation des notes.
+
+**Points à valider avant code**
+1. Sauvegarde. Le format `.enc` actuel ne contient que les notes (`BACKUP_VERSION = 1` dans `src/backup/backup.ts` ; `parseBackup` refuse toute autre version). Sans changement, les tâches sont absentes des sauvegardes et perdues à la restauration. Proposition : `BACKUP_VERSION` 2 avec `tasks`, lecture des fichiers v1 conservée, restauration additive comme la décision 11 (identique ignorée, différente ajoutée en copie avec un nouvel `id`, `noteId` remappé si la note est copiée). Hors du périmètre listé par le propriétaire : à inclure, ou à différer avec un avertissement visible.
+2. Suppression d'une note liée. Proposition : `noteId` repassé à `null` dans la transaction de `queueNoteDeletions` (`src/db/purge.ts`, qui écrit déjà `notes`, `noteIndex` et `purgeQueue`), la tâche survit. Alternative : supprimer les tâches liées, perte silencieuse.
+3. Suppression d'une tâche. La décision 11 impose une confirmation pour une note. À trancher pour une tâche : confirmation, ou suppression immédiate.
+4. `dueDate`. Champ au modèle, aucun écran en v1 : champ sans emploi, donc décoratif. Dexie n'exige pas de version pour un champ non indexé : proposition de l'ajouter quand l'écran existe.
+
+**Tests attendus (PR de code)**
+- Module `tasks` : création, bascule, suppression, filtre, lien. Migration v5 vers v6 (`tests/db-migration.test.ts`). Suppression d'une note liée (`tests/delete-note.test.ts`). `/tasks` reste couvert par `tests/router.test.ts`.
+- Scénario navigateur S21 (S1 à S20 existent dans `scripts/check-pwa-browser.mjs`, S21 est le suivant), mutation vérifiée sur chaque garde.
+- `tests/tokens.test.ts` garde jetons, contrastes et cibles de 44 px. CI : `tsc`, `npm test`, build.
+- Une PR, pas de branche empilée, README non touché (livré par `mindspace-core#27`).
 
 ### Conséquences relevées par l'audit (inventaire, pas de code)
 
