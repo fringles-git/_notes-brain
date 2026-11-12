@@ -264,3 +264,16 @@ Ce qui est juste
 - `Tasks.tsx` est un placeholder (« Vue factice »). Garder, implémenter ou retirer l'onglet : décision du propriétaire en attente.
 
 Restent en attente d'arbitrage (inchangé) : visuels du sprint, recherche et sélection non combinées, titre dérivé en affichage seulement, erreur d'ouverture d'IndexedDB (décision produit), Tâches, README.
+
+
+## 2026-11-12 (suite) : Tâches retiré, README réel, licence confirmée
+
+Décisions du propriétaire consignées : 25 (onglet Tâches retiré) et 26 (README réel, licence propriétaire inchangée). La demande les numérotait 22 et 23, déjà pris (`stripTypeScriptTypes`, déploiement CI différé) : numérotées à la suite, rien n'est renuméroté. Elle citait aussi `_notes-brain#19` (la dernière PR du cerveau est #18) et `02-FEATURES.md` (le fichier s'appelle `02-FEATURES-AND-ARCHAEOLOGY.md`) : la ligne de la matrice reste une ligne d'inventaire des repos sources, annotée « `mindspace-core` : v3, non livré ».
+
+PR du code, deux, indépendantes, aucune mergée par moi
+- #26 retire l'onglet Tâches (page, dock, route, `Tasks.tsx`). Le dock tire ses onglets de `PAGES` et `PAGE_LABELS` : un onglet sans page ne compile plus. Mutations vérifiées.
+- #27 README de 44 lignes. Écart : la demande citait `npm run check-pwa` et `check-deploy` ; les scripts réels sont `check:pwa` et `check:deploy`. Gardé par `tests/readme.test.ts`.
+
+Environnement : Node 24 est à `/opt/node24/bin` dans la session cloud ; sans lui dans le PATH, 2 tests `navigator.locks` échouent.
+
+À venir, dans l'ordre fixé par le propriétaire : sprint design (il rend ses choix, aucun code avant), sprint avant production (sur appareil physique), spécification MRR dans `03` section 8.2 avant tout code Cloud. Ne pas attaquer : réintroduction de Tâches, bannière « Nouvelle version prête » (silencieux, décidé), retrait du jeton lilas (défini à dessein), page Aide / Quoi de neuf, `dexie-react-hooks`, erreur d'ouverture d'IndexedDB.
