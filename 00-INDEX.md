@@ -41,6 +41,13 @@ Le README de `notes-aistudio` se déclare "source de Notes v3". `notes-v3` est u
 
 Total PR : 112.
 
+### Code actuel : `mindspace-core` (ajouté le 2026-11-12)
+
+L'audit ci-dessus date du 2026-11-10 et décrit les repos sources. Le code en cours est dans `fringles-git/mindspace-core` (privé) : base cible de la décision 1 (métier de `notes-v3` + UI Tiptap / Yjs de `MindSpace`). Sa mémoire de travail est `mindspace-core/CLAUDE.md` ; en cas de conflit, ce cerveau gagne.
+- État au 2026-11-11 : `main` `021c13c`, CI verte (run 69), déployé sur `mindspace.brandonlazarre.fr` (`build.json` = sha de `main`, `check-deploy` ok). PR #1 à #25 toutes mergées ou fermées. Détail par session : `05-CHANGELOG.md`. Décisions 13 à 24 : `03` section 11.
+- Fait : persistance Dexie + Yjs, éditeur Tiptap, sauvegarde chiffrée et restauration, suppression (simple et multiple) avec purge, index dérivé et recherche, titre affiché, rappel de sauvegarde, routeur, chargement à la demande, PWA (worker natif), déploiement vérifiable.
+- Non commencé : compte, sync, Cloud payant (`03` section 8.2 : aucune ligne de code avant spécification écrite), Tâches (`Tasks.tsx` est un placeholder), Aide.
+
 ## Branches de build (pas de source)
 
 - `brandonlazarre/notes-site` : app mono-fichier 26.10.15.1 (8 commits).

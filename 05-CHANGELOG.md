@@ -245,3 +245,22 @@ Environnement
 - Codex a atteint sa limite d'usage : pas de relecture automatique sur #21 et le cerveau #16.
 
 Non attaqué (consigne) : points visuels (sprint design), `persist()`, `viewport-fit`, appareil réel, lecteur d'écran (sprint avant production), erreur d'ouverture d'IndexedDB (décision produit à prendre, pas de timeout spéculatif), `dexie-react-hooks` (hook maison gardé), fenêtre de 300 ms du titre.
+
+
+## 2026-11-12 : clôture du sprint « liste des notes », rapprochement des bilans
+
+Clôture vérifiée (le 2026-11-11, 17:33 UTC) : `main` `021c13c`, CI verte (run 69), `build.json` en ligne = `021c13c`, `check-deploy` ok. Le journal précédent donnait #23 (recherche) et #25 (rappel) comme ouvertes : toutes les PR du sprint (#22 à #25) et le cerveau #14 à #17 sont mergés.
+
+Trois bilans externes (chat, lecture seule) ont été confrontés au dépôt. Ce qui est faux ou périmé, à ne pas reprendre
+- « CI non vérifiable », « aucun déploiement », « aucun hash en ligne » : faux. Le site est déployé, le sha en ligne a été comparé à `main`, la CI est lisible.
+- Le bilan du matin (Dexie v4, orphelines, phrase à la restauration, index dérivé, e2e Chromium en CI, hôte de déploiement, rappel à 14 jours, recherche, sélection multiple) décrit un état antérieur : tout est livré. Le journal le dit entrée par entrée.
+- « Bannière Nouvelle version prête » : écartée. Décision du propriétaire : mise à jour silencieuse, jamais de rechargement ; `LoadBoundary` couvre le cas du chunk disparu.
+- Jeton `--ms-accent-pro` : défini à dessein (palette officielle), réservé aux fonctions payantes, non utilisé tant qu'il n'y en a pas. À retirer seulement sur décision du propriétaire.
+
+Ce qui est juste
+- `00-INDEX.md` datait du 2026-11-10 et ne parlait pas de `mindspace-core` : corrigé ici.
+- `README.md` fait 16 octets. `LICENSE` fait 57 octets et dit « All Rights Reserved » (propriétaire, conforme à la décision du 2026-11-10, pas MIT).
+- Pas de page « Aide » ni « Quoi de neuf » : volontaire pour l'instant. Règle du produit : pas de polissage d'enveloppe (changelog, design de Réglages) sans hypothèse chiffrée.
+- `Tasks.tsx` est un placeholder (« Vue factice »). Garder, implémenter ou retirer l'onglet : décision du propriétaire en attente.
+
+Restent en attente d'arbitrage (inchangé) : visuels du sprint, recherche et sélection non combinées, titre dérivé en affichage seulement, erreur d'ouverture d'IndexedDB (décision produit), Tâches, README.
