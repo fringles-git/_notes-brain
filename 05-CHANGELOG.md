@@ -264,3 +264,16 @@ Ce qui est juste
 - `Tasks.tsx` est un placeholder (« Vue factice »). Garder, implémenter ou retirer l'onglet : décision du propriétaire en attente.
 
 Restent en attente d'arbitrage (inchangé) : visuels du sprint, recherche et sélection non combinées, titre dérivé en affichage seulement, erreur d'ouverture d'IndexedDB (décision produit), Tâches, README.
+
+
+## 2026-11-12 (suite) : décision 27, Tâches implémenté
+
+- Décision du propriétaire : l'onglet Tâches est implémenté, pas retiré. `mindspace-core#26` (retrait de `Tasks.tsx`) et `_notes-brain#19` (décisions 25 et 26) fermées sans fusion, un commentaire de fermeture sur chacune. Le `verify` rouge de #26 est sans objet, non diagnostiqué. Les numéros 25 et 26 ne sont pas attribués.
+- Perdu avec #19, volontairement : la décision 26 (README réel, licence propriétaire inchangée). Le README est livré par `mindspace-core#27` (mergée) ; la licence n'a pas changé, aucune action.
+- Décision 27 et sa spécification dans `03` section 11 : modèle Dexie version 6, périmètre v1, DEFER, quatre points à valider (sauvegarde, note supprimée, confirmation, `dueDate`). `02` ligne Tâches annotée, `00-INDEX.md` pointe la spec.
+- Règle enregistrée : une fonction listée dans `02` et non livrée n'est retirée que sur instruction explicite de changer de cap. « Pas de polissage d'enveloppe » ne s'applique pas aux Tâches.
+- Vérifié : lecture de `database.ts` (Dexie version 5 courante), `backup.ts` (`BACKUP_VERSION = 1`, version autre refusée), `purge.ts` (transaction `notes` + `noteIndex` + `purgeQueue`), `ui/store.ts` (`PAGES` contient `tasks`).
+- Vérifié aussi : `scripts/check-pwa-browser.mjs` contient S1 à S20, donc S21 est libre.
+- Non vérifié : aucun code écrit, rien d'exécuté.
+- Process : `gh pr close` échoue (GraphQL interdit dans la session), fermeture par l'API REST.
+- Prochaine étape : validation de la spec par le propriétaire, puis une PR de code dans `mindspace-core`.

@@ -29,7 +29,7 @@ Colonnes : v3 = `notes-v3` (inclut `brandonlazarre` pour les builds), MS = `Mind
 | Import PDF / EPUB / Markdown | S | partiel (Markdown/TXT en texte brut, S) | S | — | S | L | MS #32 ; import structuré MS #43 annulé par #44 |
 | Modèles | S (6 ; 2 en avant) | S (3 : Réunion, Projet, Journal) | S (6) | S (5 + perso + snippets) | S | L | MS #38 ; v6 #2 ; v3 #2/#3 |
 | Blocs rapides (Actions, Décision, Point de réunion) | — | S | — | — | — | L | MS #42 |
-| Listes, cases, onglet Tâches | S | S (stockage localStorage) | S | S (kind task) | S | L | v3 #14 |
+| Listes, cases, onglet Tâches | S | S (stockage localStorage) | S | S (kind task) | S | L | v3 #14; `mindspace-core` : non livré, spec décision 27 (`03` section 11) |
 | Propriétés, entités, `@mentions`, `+ action`, vues À faire / Aujourd'hui / En retard | — | — | — | — | S | L | AI PR #1 (40 fichiers) |
 | Cartes de révision `Question :: Réponse` (Leitner) | S | — | S | — | S | L | |
 | Carte des liens `[[ ]]` | ? | — | — | — | S | L | |
