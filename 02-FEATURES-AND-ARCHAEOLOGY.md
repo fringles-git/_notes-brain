@@ -505,20 +505,20 @@ Passe du 2026-11-13. Elle complète la section 11 (2026-11-10) sans la répéter
 
 | Branche | Écart avec `main` | Contenu |
 |---|---|---|
-| `mindspace-core` `claude/brave-shannon-p7pfr9-no-tasks` | 1 devant, 2 derrière | `7dd4d04` (2026-11-12) : retire l'onglet Tâches. Voir L37 |
+| `mindspace-core` `claude/brave-shannon-p7pfr9-no-tasks` | 1 devant, 2 derrière | `7dd4d04` (2026-11-12) : retrait de l'onglet Tâches, proposition rejetée (PR `mindspace-core#26` fermée sans fusion, `03` décision 27). Voir L37 |
 | `notes-v6` pile `fix/system-theme-editor` (`d11bb77`, `77ff372`), `feat/onboard-distill` (`ac3fbc7`), `feat/quiet-home-filters` (`7f35142`), `feat/typeset-polish` (`d665efc`) | 2, 3, 4 et 5 devant, 14 derrière | Pile linéaire. Détail par commit ci-dessous |
 | `notes-v3` `notes-site` | 9 devant | Builds mono-fichier du 2026-10-09 au 10-15, racine sans parent. `ea104c2` ("refonte UX") jamais intégré à la source |
 | `mindspace-old` `dependabot/github_actions/actions/upload-artifact-7` | 1 devant | `34e798b` (bot, 2026-11-12), bascule `upload-artifact` 4 vers 7 dans `changelog-browser-ci.yml` et `stage1-storage-browser-ci.yml`. Bruit |
 | `tiles` deux branches `feat/...` | 1 devant chacune | Résidus de PR #6 et #7 |
 | Autres | 0 devant | Résidus mergés, vérifiés par `merge-base --is-ancestor` : `notes-v5` (13 branches dont `feat/aistudio-port-intuitive-workspace` PR #24), `mindspace-old` (`fix/stage1-scoped-wipe-and-offline-fallback-20261110` PR #49, `feat/morphe-inspired-changelog-polish-20261110` PR #50, `claude/youthful-meitner-od7w6o` PR #48), `mindspace-core` `...-readme` (PR #27), `notes-v3` `ccr-35863ab5-xpw36y`, `brandonlazarre` `table-blocks` (PR #14) |
 
-**L37. Onglet "Tâches" retiré mais non fusionné (`mindspace-core`).**
-- Ajout : `128050c` direct (2026-11-10), "vues factices". Retrait : `7dd4d04` (2026-11-12), seulement sur la branche `...-no-tasks`. Aucune PR visible dans git.
+**L37. Retrait de l'onglet "Tâches" : proposition rejetée, branche résiduelle (`mindspace-core`).**
+- Ajout : `128050c` direct (2026-11-10), "vues factices". Retrait : `7dd4d04` (2026-11-12), seulement sur la branche `...-no-tasks`. Cette branche est celle de la PR `mindspace-core#26`, fermée sans fusion par le propriétaire (`03` décision 27 et `05-CHANGELOG.md`, 2026-11-12 suite).
 - Fichiers : `src/ui/Tasks.tsx` supprimé (9 lignes, `<h1>Tâches</h1><p>Vue factice.</p>`), `src/ui/store.ts` (`PAGES` passe de `['notes','tasks','settings']` à `['notes','settings']`, ajout de `PAGE_LABELS: Record<Page,string>`), `src/ui/Dock.tsx` (`ITEMS` figé remplacé par `PAGES.map`), `src/App.tsx` (entrée `VIEWS.tasks` retirée), `src/router.ts` (`/tasks` retombe sur la liste), `tests/ui-store.test.ts`, `tests/router.test.ts`, scénario S14 de `scripts/check-pwa-browser.mjs`, `CLAUDE.md` (puce "Pas d'onglet Tâches").
-- Raison citée : "Décision du propriétaire. La vue « Tâches » n'était qu'un placeholder (« Vue factice ») : une dette visuelle qui ne rapporte rien … à réintroduire au sprint « v3 features » quand la spécification du modèle économique est écrite". Le commit cite la décision 25 du cerveau.
-- État `[vérifié]` : `origin/main` contient toujours `src/ui/Tasks.tsx` ; la branche n'en contient plus. La décision du propriétaire n'est donc pas appliquée à `main`.
-- Tension : la décision 27 du cerveau (spécification "Tasks v1", en attente de validation) prévoit une vue Tâches réelle. Fusionner le retrait ou garder le placeholder reste à arbitrer.
-- Conflit probable sur `CLAUDE.md` (non simulé).
+- Raison citée dans le commit (proposition rejetée ensuite) : "Décision du propriétaire. La vue « Tâches » n'était qu'un placeholder (« Vue factice ») : une dette visuelle qui ne rapporte rien … à réintroduire au sprint « v3 features » quand la spécification du modèle économique est écrite". Le commit cite la décision 25 du cerveau.
+- État `[vérifié]` : `origin/main` contient toujours `src/ui/Tasks.tsx` ; la branche n'en contient plus.
+- Décision réglée, à ne pas rouvrir : `03` décision 27 (2026-11-12) dit que l'onglet Tâches est implémenté, pas retiré, et que `mindspace-core#26` a été fermée sans fusion. Le placeholder sur `main` est voulu jusqu'à la livraison de Tâches v1. Reste en attente : la validation de la spécification "Tâches v1" (`03`, section "Spécification : Tâches v1"). La branche est un résidu : ni à fusionner, ni à recommander. Règle du propriétaire (2026-11-12) : une fonction listée dans `02` et non livrée n'est retirée que sur instruction explicite de changer de cap.
+- Erreur de cette passe corrigée après revue Codex : la première version présentait le retrait comme un arbitrage ouvert, faute d'avoir lu la décision 27.
 
 **Pile `notes-v6` (jamais fusionnée), un commit à la fois.** Tout est écrit contre `src/routes/+page.svelte` ; `7598f17` (2026-10-31) a déplacé ce code vers `src/lib/app/Workspace.svelte` et `c80dbb0` a réécrit les composants : un portage est nécessaire, pas une fusion.
 - `d11bb77` (2026-10-29, thème et éditeur) : `app.html` (script avant premier rendu résolvant `data-theme` en light ou dark), `tokens.css` (blocs `data-theme='system'` retirés), `SettingsPanel.svelte` (`resolvedTheme`, icône `SunMoon`, indication "Suit ton appareil…"), `MarkdownEditor.svelte` (`preview` à `false`, formatage dans `<details class="format-details">`, bouton `preview-toggle`), `NoteEditor.svelte` (`detailsSummary`, `formatDay`, tiroir `<details class="editor-details">` avec `WorkflowActions`, `NoteDetails`, "Créer un modèle"), `NoteDetails.svelte` (bouton Paperclip au lieu du champ fichier natif, dates renommées "À faire avant le" et "Me le rappeler le" avec explication), `WorkflowActions.svelte` ("Classement"). `main` a réimplémenté le thème dans `e309072` ; n'est pas dans `main` : indication de thème, `SunMoon`, `detailsSummary`, libellés des dates (`git grep "Me le rappeler"` : 0 résultat).
@@ -561,17 +561,17 @@ Changements récents de `mindspace-old` (branches mergées, non perdues) : PR #4
 | Garde `syncSupported()` | Respectée à vide : aucun code de sync dans aucune référence |
 | CI navigateur | Texte périmé : `ci.yml` exécute `npm audit`, `npm test`, `npm run build` et `scripts/check-pwa-browser.mjs` (Playwright) sur chaque PR, alors que `CLAUDE.md` dit "toujours à ajouter" |
 | Import Markdown, logique `notes-v3` (sync, Ranger, rappels, i18n) | Non portés, conformément à la matrice |
-| Onglet Tâches | `main` garde le placeholder alors que la décision du propriétaire du 2026-11-12 n'existe que sur la branche `...-no-tasks` (L37) |
+| Onglet Tâches | `main` garde le placeholder : voulu (décision 27, `mindspace-core#26` fermée sans fusion). La branche `...-no-tasks` est un résidu (L37) |
 
 ### 12.10 Priorités proposées pour `mindspace-core` (vous arbitrez)
 
 | Rang | Éléments | Raison |
 |---|---|---|
-| 1 | Chemin d'erreur de `useNoteDoc` ; arbitrage du placeholder Tâches (L37) | Défaut connu ; contradiction entre `main` et la décision 2026-11-12 |
+| 1 | Chemin d'erreur de `useNoteDoc` | Défaut connu, "à traiter avant la mise en production" |
 | 2 | Export / import Markdown (L42, M1) et retour de refus de `persist()` (L6) | Portabilité ; sauvegarde sans annonce de refus |
 | 3 | Tableaux et alignement, annuler / rétablir (L39, L40) | Éditeur tactile d'abord |
 | 4 | Capture rapide, blocs rapides, modèles (L41, L1, L2) | Capture en peu de gestes ; blocs Tiptap natifs |
-| 5 | Tâches locales avec port Dexie (L38) | Dépend de la spécification (décision 27) |
+| 5 | Tâches locales : Tâches v1 de la décision 27 (L38 pour l'ancien code) | Décision réglée ; reste la validation de la spécification |
 | 6 | Widgets Recap : Souvenir, cartes dues (L25, A4), historique Retour / Avancer (L24) | Seulement avec les cartes de révision et les liens `[[ ]]` |
 | 7 | Bouton "Exporter avec les notes masquées" (L8) | Seulement avec le coffre |
 | 8 | Si `notes-v6` reste vivant : filtres en feuille, réordonnancement tactile, états vides, prénom optionnel (12.6) | Sinon archivage |
@@ -579,7 +579,7 @@ Changements récents de `mindspace-old` (branches mergées, non perdues) : PR #4
 
 ### 12.11 Non lu dans cette passe
 
-- Pages de PR GitHub : revues, commentaires, PR #2 et #19 de la seconde série de `notes-v3`, PR #3, #7, #9, #11 et #26 de `mindspace-core` (sans commit de fusion dans git). `_notes-brain` lu seulement dans son état courant.
+- Pages de PR GitHub : revues, commentaires, PR #2 et #19 de la seconde série de `notes-v3`, PR #3, #7, #9 et #11 de `mindspace-core` (sans commit de fusion dans git ; la #26, fermée sans fusion, est expliquée par `03` décision 27). `_notes-brain` lu seulement dans son état courant.
 - CSS et jeux d'icônes entre versions ; `tests/smoke.mjs` ; docs de `notes-aistudio`, `docs/*.md` ; bundles minifiés de `notes-site` comparés par chaînes seulement.
 - `notes-v3` : commits qui ne touchent que `tests/` ; texte complet des changements i18n de `e221230`.
 - `mindspace-old` : les 420 commits non-bot n'ont pas été lus un à un (liste des sujets, fichiers supprimés, filtre `numstat` d'au moins 40 lignes supprimées sous `src`, `scripts`, `public`, recherches `-S` ciblées).
