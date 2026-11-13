@@ -285,3 +285,11 @@ Restent en attente d'arbitrage (inchangé) : visuels du sprint, recherche et sé
 - Ajout de `02` section 12 "Fonctionnalités perdues ou non-mergées (Deep Audit)" : 45 fiches L1 à L45, 18 retraits par commits directs, 5 pertes par fusion, 13 retraits par PR, pile `notes-v6` détaillée par commit, branche `...-no-tasks` de `mindspace-core` (retrait de l'onglet Tâches) = résidu de la PR #26 fermée sans fusion, décision 27 : à ne pas rouvrir (L37).
 - Constats vérifiés sur le code : `mindspace-core` `useNoteDoc.ts` sans chemin d'erreur ; `tiles` (public) suit des photos de véhicule et un CV ; `notes-aistudio` a perdu le bouton "Exporter avec les notes masquées" (le code `exportBackup(withHidden)` reste) .
 - Écart de méthode : diffs lus avec `git show` sur clones complets (`get_commit` n'accepte pas `detail: "patch"`). Pages de PR, CSS et bundles minifiés non lus. Rien n'a été codé ni exécuté.
+
+## 2026-11-13 (suite) : registre de couverture des commits
+
+- Demande du propriétaire : preuve qu'aucun commit n'a été sauté dans `notes-v3`, `notes-v5`, `notes-v6`, `notes-aistudio` et `MindSpace`. Cause : l'archéologie précédente filtrait (fichiers supprimés, mots-clés, gros retraits) au lieu de lire chaque commit.
+- Ajout de `ledger/` : 811 commits hors fusions, 10 dépôts, un statut par commit (696 `lu`, 1 `stat`, 42 `bruit`, 72 `build`), un résumé d'une phrase et un fait vérifiable. 171 commits de fusion exclus. Limites : `ledger/README.md`.
+- Méthode : script de classification (direct, PR, non fusionné, bot, build), six agents de lecture, contrôle automatique (sha présents, ordre, statuts), échantillons rejoués par l'orchestrateur.
+- Une erreur de classement corrigée en cours de route : les commits "Notes 26.10.x : …" de `notes-v3` sont des commits source et non des builds.
+- Reste à faire : archive du design système (`design-system/`, PR séparée).

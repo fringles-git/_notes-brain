@@ -12,6 +12,7 @@ Statuts utilisés partout : `shipped`, `experimental`, `described only`. Champ i
 | `02-FEATURES-AND-ARCHAEOLOGY.md` | Matrice features, UI/UX, navigation, PWA, rejets, plan de portage, licence, archéologie Git (section 11), fonctionnalités perdues ou non-mergées (section 12). | écrit |
 | `03-TECH-CONVENTIONS.md` | Stack, architecture, nommage, CI, tests, sécurité, contraintes E2E + IA, gouvernance de dépôts, dette. | écrit |
 | `05-CHANGELOG.md` | Journal de session. | écrit |
+| `ledger/` | Registre de couverture : une ligne par commit de 10 dépôts (811 commits), statut lu / stat / bruit / build. Lire `ledger/README.md` d'abord. | écrit (2026-11-13) |
 
 ## Lignée des itérations (ordre indicatif, déduit des dates de PR et de push)
 

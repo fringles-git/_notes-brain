@@ -1,0 +1,2 @@
+sha	date	author	kind	pr	nfiles	add	del	subject	files(<=6)	status	summary	flags	evidence
+6234c333	2025-10-20	fringles	unmerged		2	22	0	Initial commit	LICENSE README.md	lu	Premier commit de 2025 : ajoute un fichier LICENSE de 21 lignes (texte MIT) et un README.md d'une ligne.	docs	git show : LICENSE +21 lignes, README.md +1 ligne ; aucun code.
