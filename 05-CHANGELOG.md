@@ -277,3 +277,11 @@ Restent en attente d'arbitrage (inchangé) : visuels du sprint, recherche et sé
 - Non vérifié : aucun code écrit, rien d'exécuté.
 - Process : `gh pr close` échoue (GraphQL interdit dans la session), fermeture par l'API REST.
 - Prochaine étape : validation de la spec par le propriétaire, puis une PR de code dans `mindspace-core`.
+
+## 2026-11-13 : archéologie profonde de l'organisation
+
+- Inventaire des 18 dépôts de `fringles-git` : 7 absents ou hors périmètre du brain (`MindSpace-old`, `tiles`, `tiles-aistudio`, `adv7j.fr`, `F1-Data-JSON`, `txAdminRecipe`, `fringles-git`) ; `MindSpace` recréé ; 4 dépôts publics, 14 privés. Détail : `00-INDEX.md`, "Inventaire de l'organisation" ; `02` section 12.2.
+- `MindSpace` recréé le 2026-11-11 (1 commit, `README.md`). L'historique de l'ancienne appli est dans `MindSpace-old` (493 commits).
+- Ajout de `02` section 12 "Fonctionnalités perdues ou non-mergées (Deep Audit)" : 45 fiches L1 à L45, 18 retraits par commits directs, 5 pertes par fusion, 13 retraits par PR, pile `notes-v6` détaillée par commit, branche `...-no-tasks` de `mindspace-core` (retrait de l'onglet Tâches) = résidu de la PR #26 fermée sans fusion, décision 27 : à ne pas rouvrir (L37).
+- Constats vérifiés sur le code : `mindspace-core` `useNoteDoc.ts` sans chemin d'erreur ; `tiles` (public) suit des photos de véhicule et un CV ; `notes-aistudio` a perdu le bouton "Exporter avec les notes masquées" (le code `exportBackup(withHidden)` reste) .
+- Écart de méthode : diffs lus avec `git show` sur clones complets (`get_commit` n'accepte pas `detail: "patch"`). Pages de PR, CSS et bundles minifiés non lus. Rien n'a été codé ni exécuté.

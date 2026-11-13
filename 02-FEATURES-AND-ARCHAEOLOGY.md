@@ -413,7 +413,180 @@ Méthode : `list_commits` avec `path` sur chaque fichier critique, `get_commit` 
 - `notes-v5` : PR #11 lu par son corps, pas par le patch de `snapshot.ts` ; PR #8 lu sur le CSS seulement ; import `b1f1731` en un seul commit, aucune implémentation antérieure visible.
 - Restaurer ne veut pas dire fusionner : les coûts sont des estimations des lecteurs de patch.
 
-## 12. Limites
+## 12. Fonctionnalités perdues ou non-mergées (Deep Audit)
+
+Passe du 2026-11-13. Elle complète la section 11 (2026-11-10) sans la répéter : les fiches M1 à M6, V1 à V8 et A1 à A4 restent la référence pour ce qu'elles couvrent.
+Étiquettes : `direct` = commit non fusionné par PR, sur la ligne first-parent de `main` ; `PR` = retrait via pull request ; `non mergé` = code présent seulement sur une branche. `[vérifié]` = confirmé par `git grep` ou `git ls-tree` sur `origin/main` le 2026-11-13 ; les autres lignes viennent de patchs lus, non exécutés.
+
+### 12.1 Méthode et écarts avec la consigne
+
+- Clones complets avec toutes les branches (`git fetch origin '+refs/heads/*:refs/remotes/origin/*'`) pour `notes-v3` (171 commits), `notes-v5` (157), `notes-v6` (31), `notes-aistudio` (8), `brandonlazarre` (98), `mindspace-old` (493), `mindspace-core` (79) et `MindSpace` (1). `tiles` lu en clone de profondeur 50 sur toutes les branches.
+- Fichiers supprimés : `git log --all --diff-filter=D --name-only`. Messages : `remove|delete|revert|drop|clean|refactor|rewrite|replace|retire|rename|simplif|unmount|disable|hide|legacy|unused`. Commits directs : non-fusions de la ligne first-parent de `main` sans `(#N)`. Branches : `rev-list --count` dans les deux sens et `merge-base --is-ancestor`. Symboles : `git log -S` et `git grep` sur `origin/main`.
+- Écarts : `get_commit` n'accepte pas `detail: "patch"` (valeurs `none`, `stats`, `full_patch`). Les diffs ont été lus avec `git show` sur clones complets, ce qui évite la troncature et permet le filtre par message et la détection des commits directs. Les pages de PR GitHub (revues, commentaires) n'ont pas été lues : la numérotation des PR de `notes-v3` est ambiguë (voir 12.3) et les raisons viennent des messages de commit.
+
+### 12.2 Rapport d'inventaire des dépôts (2026-11-13)
+
+`list_repos` renvoie 18 dépôts. Le brain (`00-INDEX.md`, état du 2026-11-10 pour les 9 repos Notes, plus l'ajout de `mindspace-core` le 2026-11-12) en couvrait 10. Les 8 autres sont `_notes-brain` lui-même et 7 dépôts qui n'y figuraient pas ou n'y étaient mentionnés que comme hors périmètre.
+
+| Dépôt | Vis. | Dernier push | Documenté avant cette passe | Constat |
+|---|---|---|---|---|
+| `mindspace-core` | priv | 2026-11-12 | `00-INDEX` (section "code actuel"), `03`, `05` ; absent de la matrice `02` | Code en cours. Audit des retraits en 12.3 à 12.7. |
+| `MindSpace-old` | priv | 2026-11-12 | non | Ancien historique de `MindSpace` (493 commits, dernière version 6.11.10-1, tête `82a689c`). Renommage inféré, voir ci-dessous. |
+| `MindSpace` | priv | 2026-11-11 | oui, ancien contenu | Repo recréé : 1 commit `89e0ed9` ("Initial commit", 2026-11-11), 1 fichier `README.md`. Aucun ancêtre commun avec `MindSpace-old`. Les 47 PR et le code décrits dans `00` à `03` vivent désormais dans `MindSpace-old`. |
+| `tiles` | **pub** | 2026-11-11 | non | CMS / vitrine bento en JavaScript vanille + PHP (README), 21 commits, 3 branches. |
+| `tiles-aistudio` | priv | 2026-11-11 | non | "LZR Hub" (`00_README.md`) : portfolio public et CMS Flat-File `tiles.brandonlazarre.fr`. `server.js` et `server.ts`, `php/`, `seed/`, docs `00` à `03`. Branche `main` seule, aucune PR. |
+| `adv7j.fr` | priv | 2026-10-20 | non | README + `js/`. Branches `main` et `troyes` (déploiement `troyes.adv7j.fr`). Aucune PR. |
+| `notes-v5` | priv | 2026-11-11 | oui, état du 2026-11-10 | 15 branches distantes (6 en novembre 10), PR #17 à #24 mergées le 2026-11-10 et 2026-11-11 : design minimal, recherche française, réglages tablette, perf, port AI Studio. |
+| `notepad-pwa`, `notes-4`, `notes-svelte`, `brandonlazarre` | priv | voir `list_repos` | oui | Privés au 2026-11-13 (`list_repos`). |
+| `notes-v3`, `notes-v6`, `notes-aistudio` | priv | inchangé | oui | Pas de nouvelle activité depuis le 2026-10-31, 2026-11-02 et 2026-11-06. |
+| `F1-Data-JSON`, `fringles-git` (profil) | pub | 2024-05-24 | non | Hors thème Notes. Non lus : une seule branche `main` chacun. |
+| `txAdminRecipe` | pub (fork) | 2024-09-24 | non | Fork de recette FiveM, hors thème. Non lu. |
+
+- Hors périmètre Notes mais actifs : `tiles`, `tiles-aistudio`, `adv7j.fr` correspondent aux projets 2, 1 et 4 de l'utilisateur. Leur contenu métier n'est pas audité ici.
+- Alerte `tiles` (public) `[vérifié]` : l'arbre suivi contient `seed/data/auth.json` (un champ `hash` vide, donc pas de secret), `seed/data/page.json` (une adresse e-mail), `seed/uploads/car-0.jpg` à `car-7.jpg` (8 photos de véhicule) et `seed/uploads/cv-brandon-lazarre.pdf`. `data/` et `uploads/` sont ignorés. Rien n'a été ouvert : à confirmer que ces fichiers sont voulus publics (plaques, adresses, CV).
+- Branches `tiles` : `feat/portfolio-clarity-accessibility` (`6491415`) et `feat/visual-interaction-polish` (`7b27ca2`) ont chacune 1 commit hors `main`. Le diff de la seconde contre `main` est vide sur ses propres fichiers ; celle de la première est un sous-ensemble de `main`. Ce sont des résidus de squash (PR #6 `f9dbfd5`, PR #7 `699d07d`).
+
+### 12.3 Retraits par commits directs (sans PR)
+
+`notes-v3` : tous les commits non fusionnés jusqu'à `893b157` (2026-10-19) sont directs. Le code source commence à `4da6255` (2026-10-18, racine sans parent). Il existe deux séries de PR : #1 à #14 (aussi dans `brandonlazarre`), puis #1 à #22 (seulement dans `notes-v3`, depuis 2026-10-29). Les PR #2 et #19 de la seconde série n'ont pas de commit de fusion.
+
+| ID | Fonction perdue | Repo | Ajout | Retrait | Fichiers, fonctions | Ce que ça faisait | Raison | Dans HEAD | Valeur / coût |
+|---|---|---|---|---|---|---|---|---|---|
+| L1 | "+" : un appui crée et ouvre une note, appui long ou clic droit ouvre la feuille Créer | `notes-v3`, `brandonlazarre` | `4da6255` direct | `4a4da60` direct (2026-10-18) | `src/ui/Dock.tsx` `Fab` (`held`, minuterie `onPointerDown` sur `CONFIG.longPressMs`, `onContextMenu`, `createAndOpen()`), `src/config.ts` conseil `hold` | Création en un geste | "barre unique + au pouce, créer en 3 choix" ; la perte elle-même `non documentée` | Partiel `[vérifié]` : `Fab` fait `toggleLayer('create')` (`Dock.tsx:61`) ; la touche `N` crée une note (`gestures.ts`) ; glisser sur un choix existe (`e15376f`, `CONFIG.holdMs`) | Moyenne / faible (~12 lignes dans `4da6255`) |
+| L2 | Bouton micro dédié et île de recherche dans le dock | idem | `4da6255` | `4a4da60` | `Dock.tsx` `#mic` (état `is-recording`, icône stop), `#search-button` | Enregistrement vocal en un appui, pulsation rouge | idem | Partiel : tuile "Vocal" (`Layers.tsx:45`), bouton sur liste vide (`List.tsx:310`), raccourci manifest `?new=voice` | Faible à moyenne / faible |
+| L3 | Tuiles Liste / Photo / Du jour / Coller et feuille "Modèles" dans Créer | idem | `4da6255` | `4a4da60` | mode `templates` de la couche, composant `Templates` | Création typée en un appui | idem | Déplacées (Note du jour `a5bd51c`, modèles en puces `applyTemplate`, Photo et presse-papiers sous Importer `Layers.tsx:64`) | Faible : déplacé |
+| L4 | Filtre "Auteur" Toutes / Moi / IA (`prefs.by`) | idem | `b6647a0` (build 2026-10-09), `4da6255` | UI `1224a58` ; logique `a9bdc0d` direct (2026-10-19) | `store.ts` `filterNotes(by)`, `actions.ts` `clearByFilter`, `List.tsx` pastille, `types.ts`, `config.ts` | Filtrait les notes créées par l'utilisateur ou avec l'IA | `a9bdc0d` : "filtre mort retiré" | `Note.by` et badge "IA" restent (`List.tsx:217`), aucun chemin ne crée `by:'ai'` | Faible : filtre réellement mort |
+| L5 | Police serif Literata "Classique" | idem | `b6647a0`, `4da6255` (`prefs.font`, `--font-serif`) | `ef23bea` direct (2026-10-19) | `body[data-font=serif]` | Police des notes au choix | changelog : "Une seule police, Figtree" | Absente. `src/changelog.ts:290` annonce encore "Figtree ou Literata" `[vérifié]` | Faible / faible à moyen (police) |
+| L6 | Bouton "Protéger le stockage" et ses messages | idem | `b6647a0`, `4da6255` | `d6af879` direct (2026-10-19) | Réglages, `navigator.storage.persist()` | Annonçait "Stockage protégé", "Le navigateur a refusé. Exportez régulièrement une sauvegarde." ou "Non pris en charge" | changelog : "Le stockage se protège seul à l'installation et à chaque export" | `persistStorage()` (`features.ts:577`) silencieux. Dans `mindspace-core`, `exportBackup.ts` demande la persistance après le téléchargement ; si un refus est annoncé : non vérifié | Moyenne (sauvegarde E2E) / faible |
+| L7 | Mineurs : "Revoir l'accueil" (`replayWelcome`), étiquette `halfYear` "26H2", puce "Tout" de la recherche, étapes "Dicter" et "Chercher" de la visite | idem | `4da6255` | `d6af879`, `801d11f`, `4a4da60` directs | | | | Déplacé (Aide) ou voulu | Faible |
+| L8 | Bouton "Exporter avec les notes masquées" | `notes-aistudio` | copie de `notes-v3` en `9021b9b` | `d2819fc` direct (2026-11-02, "refactor: update tour content and improve UI state") | `SettingsPage.tsx` (`f.pin && exportBackup(true)`), clés `settings.exportHidden*` | Sauvegarde incluant les notes masquées, scellée par un code affiché une fois (le PIN n'est jamais dans le fichier) | `non documentée` | `[vérifié]` : `exportBackup(withHidden)` et `writeBackup` (`features.ts:543`) existent, aucun appel `exportBackup(true)` dans `src` ; seules les clés i18n subsistent. `notes-v3` garde le bouton (`SettingsPage.tsx:97`) | Haute pour la sauvegarde chiffrée avec coffre / faible (re-câbler le bouton) |
+| L9 | Réglages réécrits : données fictives de stockage | `notes-aistudio` | `6dbe911`, `d2819fc` directs | — | `SettingsPage.tsx` `Synchro()` | Valeurs figées (`baseTextMb = 82`, `baseListMb = 36`, `baseAttMb = 66`, `quotaMb = 2048`) et un toast "Audit PWA terminé : Score 100/100" après 550 ms | `non documentée` | Présent en l'état | Défaut : affichage non mesuré |
+| L10 | Notes d'exemple réintroduites | `notes-aistudio` | — | `d2819fc` direct recrée une note épinglée "Bienvenue dans Notes" au premier lancement | | Inverse la décision de `notes-v3` `35c0380` | `non documentée` | Présent | Faible |
+| L11 | Visite automatique du premier lancement | `notes-v6` | `a093537` (PR #1) | `c2701fc` direct (2026-11-02) : `showOnboarding = !hasLaunched` devient `false` | `src/lib/app/Workspace.svelte`, ajout de `QuickCapture.svelte`, `capture.ts` (`captureNote`) | Ouvrait le guide sur une bibliothèque vide | `docs/capture-experiment-2026-11-02.md` : "No automatic tour interrupts the first visit" | Le code et l'entrée Réglages restent (`Workspace.svelte:56,148,505`). La carte unique `ac3fbc7` (non mergée) entre en conflit | Haute pour le prénom optionnel de `ac3fbc7` / faible à moyen |
+| L12 | Raccourci `N` seul pour créer une note | `notes-v6` | — | `10ce308` direct (2026-10-31) | `Workspace.svelte:117` | Créait une note hors champ de saisie | `docs/polish-2026-10-31.md` : les raccourcis globaux ne perturbent plus la saisie ; remplacé par Ctrl/⌘+Alt+N | Remplacé | Faible : choix de sûreté |
+| L13 | Entrées "Vue d'ensemble" et "Aide" de la barre latérale, boutons Accueil / Recherche / Aide du dock mobile | `notes-v6` | début de dépôt | `1bae3e1` direct (2026-10-28) | | Navigation d'origine | `non documentée` | Contenu Aide conservé (`view==='help'`) | Faible |
+| L14 | Document de design et `design.json` | `notes-v6` | — | `c80dbb0` direct (2026-10-31) : `DESIGN.md` ~296 lignes modifiées, `.impeccable/design.json` 213 lignes supprimées | | | Ancien design préservé dans `docs/design-reference-2026-10-29.md` (d'après `SYNC.md`) | Préservé | Information |
+| L15 | Magasin de brouillon temporaire `useDraft` | `mindspace-core` | `93b4701` direct (2026-11-10) | `c74ffb6` direct | `src/ui/draftStore.ts`, `tests/draft-store.test.ts` | Gardait le JSON Tiptap en mémoire dans Zustand | "EXCEPTION TEMPORAIRE à la frontière des données … à supprimer au branchement Yjs" | Absent `[vérifié]` | Aucune |
+| L16 | `ensureNote` : ouverture ou création automatique de la première note, `DEFAULT_TITLE`, `createNote(title='Sans titre')` | `mindspace-core` | `c74ffb6` | `8f85ad2` direct (2026-11-10) | | | "plus d'ouverture automatique au rechargement" ; Dexie v2 convertit "Sans titre" en vide, affiché par `UNTITLED` | Absent | Faible |
+| L17 | Design verre : classe `.ms-glass`, jetons `--ms-glass-*`, dock "îlot verre", repli `prefers-reduced-transparency`, 4 fichiers CSS (`ui.css` 117 lignes, `editor.css` 164, `notes.css` 56, `tokens.css` 53) | `mindspace-core` | `128050c`, `93b4701` directs | `5469a8a` direct (2026-11-11) | fusion dans `src/styles/app.css` et `tokens.css` | Surfaces translucides | "Flat : plus de glassmorphism, de backdrop-filter, de transparence ni d'ombre" (décision de design du propriétaire) | `ms-glass` : 0 résultat `[vérifié]`. `forced-colors` et `safe-area` repris. Aucune règle `prefers-reduced-motion` dans `src` alors que `app.css` contient 2 règles `transition` ou `animation` `[vérifié]` : à vérifier | Information ; à vérifier : mouvement réduit |
+| L18 | Workflow CodeQL | `mindspace-core` | `c6d736d` direct (2026-11-11) | `9a82eeb` (PR #4) | `.github/workflows` | Analyse statique | "Code scanning is not enabled" sur dépôt privé ; `CLAUDE.md` : "Pas de CodeQL" | Absent | Faible |
+
+### 12.4 Pertes par fusion ou par réécriture
+
+| ID | Perte | Repo | Commit | Détail | Valeur |
+|---|---|---|---|---|---|
+| L19 | Raccourcis clavier rapides (Esc, Ctrl/⌘+K, `/`, `n` ouvrant la feuille Créer) et `aria-keyshortcuts="N"` sur "+" | `notes-v3`, `brandonlazarre` | ajout `90cbc97` (2026-10-20), perte au conflit de `a31e280` (fusion `notes-pwa`, PR #2 de la première série, 2026-10-21) | `useKeyboardShortcuts` : 0 occurrence après la fusion, 2 dans son second parent. `gestures.ts` couvre déjà Esc, ⌘K, `/`, `N`, `L`, `D`, `S` ; restent l'attribut ARIA et `N` ouvrant la feuille. `non documentée` | Faible, trivial |
+| L20 | Bascule cartes / liste et bouton de tri de l'île du haut | `notes-v3` | `2c7478e` (PR #14, 2026-10-31) | Les préférences `view`, `sort`, `dir` existent encore (`kit.tsx:150`) ; contrôles déplacés vers Apparence et Filtrer, interface non ouverte | Faible |
+| L21 | Message "Le code PIN doit contenir au moins 4 chiffres." | `notes-v3` | `c3ec060`, `a5c92da` | Absent du source de HEAD, remplacement non tracé | Faible |
+| L22 | Paramètre `danger` de `ConfirmDialog` | `mindspace-core` | perdu au merge `6e49e1e`, rétabli par `c5ae85a` | Constat repris du journal des commits | Aucune : rattrapé |
+| L23 | Titre dérivé de la liste | `mindspace-core` | réécriture de `NotesList` depuis une version périmée, rétabli dans `339dbce` | Détecté par le scénario S17 | Aucune : rattrapé |
+
+### 12.5 Retraits par PR (nouveaux)
+
+`notes-v5` est presque purement additif : le seul fichier source supprimé de l'historique est l'ensemble TanStack (`19c7ee4`, déjà en 11.3). Aucun commit direct n'a retiré une fonction ; `dad736e` (direct, 2026-10-22) a seulement changé la chaîne d'outils (`vite 8.1.5` vers `^6.4.4`, annulé par la PR #7). Les PR #17 à #20 n'ont rien retiré d'important, #24 n'a retiré aucune fonction.
+
+| ID | Fonction | Repo | Ajout | Retrait | Fichiers, fonctions | Ce que ça faisait | Raison | Dans HEAD |
+|---|---|---|---|---|---|---|---|---|
+| L24 | Historique de visite Retour / Avancer des notes | `notes-v5` | `32e9bd9` (PR #14, 2026-11-08) | `f1b5160` (PR #15, 2026-11-08) | `src/notes/actions.ts` 193 à 212 (`visited`, `notePast`, `noteFuture` plafonnés à 100, `visitHistory`, `noteBack`, `noteForward`, `canGoForward`), flèches de l'en-tête de `Editor.tsx` | Marchait dans la pile des notes ouvertes | `docs/contextual-navigation.md` : "pas de flèches de visites sur tablette ; retour de fermeture sur mobile" | Code mort, aucun appel hors `actions.ts` `[vérifié par l'agent]`. Valeur moyenne pour des liens `[[ ]]` ; coût faible |
+| L25 | Widgets Recap : Reprendre (`CONFIG.resumeMs`), À venir (14 jours), À réviser (`startStudy(due)`), À faire, Photo récente / Note vocale, Souvenir (> 30 jours, tirage déterministe par jour) | `notes-v5` | `b1f1731` direct | démontés par `32e9bd9` et `f1b5160` | `src/notes/ui/List.tsx:72-130`, ~24 règles `.recap` / `.widget` | Tuiles de l'accueil | `contextual-navigation.md` | Code présent non monté (`App.tsx` n'importe que `Header, InfoBar, NoteList`). `Today` ne reprend que Reprendre, À faire et rappels. Souvenir, cartes dues, photo récente et "À venir 14 jours" n'ont plus d'entrée. `notes-v3` garde `Recap` monté. Valeur moyenne ; coût faible |
+| L26 | Raccourcis d'en-tête Tri, ordre, Filtrer, "Profil local", Bibliothèque ; calques `Sort`, `Filters`, `Profile` | `notes-v5` | PR #14 | `f1b5160` (PR #15) : une seule entrée "Options" | `Layers.tsx` ~259, 284, 286, 298 | Panneau "Espace local" (nombre de notes, "Réglages complets") | `contextual-navigation.md` | Code mort : aucun `openLayer('sort'|'filters'|'profile')`. PR #24 a même ajouté "Titre" à `Sort` inaccessible. Valeur faible |
+| L27 | Dock à cinq entrées (Accueil, Notes, Tâches, Listes, Calendrier) | `notes-v5` | `32e9bd9` | `f1b5160` le lendemain | `Dock.tsx` | | "Quatre destinations" | Absent (4 entrées, `--n: 4`) |
+| L28 | Indice visuel de tirer pour chercher | `notes-v5` | | `32e9bd9` | `.pull-hint` | Icône + "Rechercher" | `non documentée` | Le geste marche (`gestures.ts`, `CONFIG.pullToSearch` = 72), `app.css:128-139` orphelin. Même cas que V7 |
+| L29 | Teintes par type de note (`KIND_TONE`, `[data-tone]`) | `notes-v5` | `b1f1731` | `6840b25` (PR #6, 2026-10-22) | | Teintait tuiles, puces de recherche et widgets | "folder colours now mean folders only" | Absent, volontaire |
+| L30 | Segments Style et Accent de "Apparence rapide" | `notes-v5` | | `f1b5160` | `Layers.tsx:257` | | | Dans les Réglages complets (`Sheets.tsx:220-221`, `LOOKS` Glass / Paper / Minimal) |
+| L31 | Télémétrie d'erreurs Lovable et page d'erreur serveur | `notes-v5` | `b1f1731` | `19c7ee4` (PR #9) | `error-capture.ts`, `lovable-error-reporting.ts` (`window.__lovableEvents.captureException`), `error-page.ts` | Rapportait erreurs et rejets non gérés | partie du retrait TanStack | Reste `ErrorBoundary` (`src/main.tsx`). Valeur faible : télémétrie sortante |
+| L32 | "Aujourd'hui" et Tâches remaniés | `notes-v5` | | `1c1fb14` (PR #24, 2026-11-11) | | Retire les sections "Tâches en cours / Rappels à venir / Reprendre", le filtre `remind >= Date.now()` (les rappels passés s'affichent "Rappel passé"), la bascule "Inclure les tâches terminées" (remplacée par 4 vues), `plainText` / `icsDate` en ligne (vers `ics.ts`) | `docs/aistudio-port.md` : navigation alternative, réglages en double, i18n et variantes de cartes d'AI Studio non copiés | Information |
+| L33 | Changelog / Réglages de `MindSpace` : `changelog.css` (340 lignes), `SettingsHub.tsx`, `ReleaseDetail.tsx` | `mindspace-old` | PR #13 à #17 | `7e3da2f`, `7d72e33`, `c4f3770` (PR #19, 2026-11-05) | `changelog.css` devenu orphelin après `b137015` | Verdict établi : rien de fonctionnel perdu. `ChangelogTimeline.tsx` réimplémente le rail avec utilitaires, garde filtres (`aria-pressed`), marqueur de nouveautés et permaliens. `SettingsHub` remplacé par `src/layouts/SettingsLayout.tsx` (`8e24993`). `ReleaseDetail.tsx` n'était qu'une ré-exportation de 2 lignes. Restent les règles `prefers-reduced-motion` du CSS supprimé et les crochets `ms-node`, `ms-release-rail` sans règles |
+| L34 | `touchNote` et `TOUCH_DELAY_MS = 500` | `mindspace-core` | `c74ffb6` direct | `91a5e0e` (PR #12) | `src/db/indexing.ts` (suiveur d'édition) | | Le 500 ms ne suivait pas y-indexeddb ; un `updatedAt` périmé faisait rater la note à la reconstruction de l'index | Absent |
+| L35 | `deleteNote` sans file | `mindspace-core` | `4381e48` direct | `b863ced` (file de purge, Dexie v4), `339dbce` (PR #24, `queueNoteDeletions`) | `src/db/purge.ts` | | bases de texte orphelines ; atomicité de la suppression multiple | Remplacé |
+| L36 | `vite-plugin-pwa` et 7 paquets `workbox-*` | `mindspace-core` | `87563ec` direct (2026-11-11) | `646252a` (PR #12) | `src/sw.ts`, `scripts/build-sw.mjs` | | 7 devDependencies, 6 alertes `npm audit`, 79 Mo de moins | 0 résultat `workbox` |
+
+### 12.6 Branches fantômes (code jamais fusionné)
+
+| Branche | Écart avec `main` | Contenu |
+|---|---|---|
+| `mindspace-core` `claude/brave-shannon-p7pfr9-no-tasks` | 1 devant, 2 derrière | `7dd4d04` (2026-11-12) : retrait de l'onglet Tâches, proposition rejetée (PR `mindspace-core#26` fermée sans fusion, `03` décision 27). Voir L37 |
+| `notes-v6` pile `fix/system-theme-editor` (`d11bb77`, `77ff372`), `feat/onboard-distill` (`ac3fbc7`), `feat/quiet-home-filters` (`7f35142`), `feat/typeset-polish` (`d665efc`) | 2, 3, 4 et 5 devant, 14 derrière | Pile linéaire. Détail par commit ci-dessous |
+| `notes-v3` `notes-site` | 9 devant | Builds mono-fichier du 2026-10-09 au 10-15, racine sans parent. `ea104c2` ("refonte UX") jamais intégré à la source |
+| `mindspace-old` `dependabot/github_actions/actions/upload-artifact-7` | 1 devant | `34e798b` (bot, 2026-11-12), bascule `upload-artifact` 4 vers 7 dans `changelog-browser-ci.yml` et `stage1-storage-browser-ci.yml`. Bruit |
+| `tiles` deux branches `feat/...` | 1 devant chacune | Résidus de PR #6 et #7 |
+| Autres | 0 devant | Résidus mergés, vérifiés par `merge-base --is-ancestor` : `notes-v5` (13 branches dont `feat/aistudio-port-intuitive-workspace` PR #24), `mindspace-old` (`fix/stage1-scoped-wipe-and-offline-fallback-20261110` PR #49, `feat/morphe-inspired-changelog-polish-20261110` PR #50, `claude/youthful-meitner-od7w6o` PR #48), `mindspace-core` `...-readme` (PR #27), `notes-v3` `ccr-35863ab5-xpw36y`, `brandonlazarre` `table-blocks` (PR #14) |
+
+**L37. Retrait de l'onglet "Tâches" : proposition rejetée, branche résiduelle (`mindspace-core`).**
+- Ajout : `128050c` direct (2026-11-10), "vues factices". Retrait : `7dd4d04` (2026-11-12), seulement sur la branche `...-no-tasks`. Cette branche est celle de la PR `mindspace-core#26`, fermée sans fusion par le propriétaire (`03` décision 27 et `05-CHANGELOG.md`, 2026-11-12 suite).
+- Fichiers : `src/ui/Tasks.tsx` supprimé (9 lignes, `<h1>Tâches</h1><p>Vue factice.</p>`), `src/ui/store.ts` (`PAGES` passe de `['notes','tasks','settings']` à `['notes','settings']`, ajout de `PAGE_LABELS: Record<Page,string>`), `src/ui/Dock.tsx` (`ITEMS` figé remplacé par `PAGES.map`), `src/App.tsx` (entrée `VIEWS.tasks` retirée), `src/router.ts` (`/tasks` retombe sur la liste), `tests/ui-store.test.ts`, `tests/router.test.ts`, scénario S14 de `scripts/check-pwa-browser.mjs`, `CLAUDE.md` (puce "Pas d'onglet Tâches").
+- Raison citée dans le commit (proposition rejetée ensuite) : "Décision du propriétaire. La vue « Tâches » n'était qu'un placeholder (« Vue factice ») : une dette visuelle qui ne rapporte rien … à réintroduire au sprint « v3 features » quand la spécification du modèle économique est écrite". Le commit cite la décision 25 du cerveau.
+- État `[vérifié]` : `origin/main` contient toujours `src/ui/Tasks.tsx` ; la branche n'en contient plus.
+- Décision réglée, à ne pas rouvrir : `03` décision 27 (2026-11-12) dit que l'onglet Tâches est implémenté, pas retiré, et que `mindspace-core#26` a été fermée sans fusion. Le placeholder sur `main` est voulu jusqu'à la livraison de Tâches v1. Reste en attente : la validation de la spécification "Tâches v1" (`03`, section "Spécification : Tâches v1"). La branche est un résidu : ni à fusionner, ni à recommander. Règle du propriétaire (2026-11-12) : une fonction listée dans `02` et non livrée n'est retirée que sur instruction explicite de changer de cap.
+- Erreur de cette passe corrigée après revue Codex : la première version présentait le retrait comme un arbitrage ouvert, faute d'avoir lu la décision 27.
+
+**Pile `notes-v6` (jamais fusionnée), un commit à la fois.** Tout est écrit contre `src/routes/+page.svelte` ; `7598f17` (2026-10-31) a déplacé ce code vers `src/lib/app/Workspace.svelte` et `c80dbb0` a réécrit les composants : un portage est nécessaire, pas une fusion.
+- `d11bb77` (2026-10-29, thème et éditeur) : `app.html` (script avant premier rendu résolvant `data-theme` en light ou dark), `tokens.css` (blocs `data-theme='system'` retirés), `SettingsPanel.svelte` (`resolvedTheme`, icône `SunMoon`, indication "Suit ton appareil…"), `MarkdownEditor.svelte` (`preview` à `false`, formatage dans `<details class="format-details">`, bouton `preview-toggle`), `NoteEditor.svelte` (`detailsSummary`, `formatDay`, tiroir `<details class="editor-details">` avec `WorkflowActions`, `NoteDetails`, "Créer un modèle"), `NoteDetails.svelte` (bouton Paperclip au lieu du champ fichier natif, dates renommées "À faire avant le" et "Me le rappeler le" avec explication), `WorkflowActions.svelte` ("Classement"). `main` a réimplémenté le thème dans `e309072` ; n'est pas dans `main` : indication de thème, `SunMoon`, `detailsSummary`, libellés des dates (`git grep "Me le rappeler"` : 0 résultat).
+- `77ff372` : `DESIGN.md` seul (+11 lignes, paliers 14 px et 13 px).
+- `ac3fbc7` (2026-10-30) : `DashboardOverview.svelte` perd `metrics` et `wordCount` ; `Workspace.svelte` gagne `userName`, `nameDraft`, `setName`, `finishOnboarding(write)`, retire le prénom codé en dur et l'initiale de l'avatar ; onboarding de 3 étapes ramené à 1 carte, `content.ts` perd `onboarding` ; `NoteLibrary.svelte` gagne `activeFilters`, `narrowing`, `resetAll` et trois états vides (première note, "Aucune note ne correspond" avec "Tout afficher", section vide) ; `SettingsPanel.svelte` champ "Prénom" ; `focus.ts` préfère `[data-autofocus]`. Le prénom codé en dur reste dans `main` (`Workspace.svelte:424,435`) `[vérifié]`.
+- `7f35142` (2026-10-30) : supprime `DashboardOverview.svelte` (seul fichier source supprimé sur une branche v6) ; `NoteLibrary.svelte` gagne `sheetOpen`, `chips`, `clear`, `clearFilters`, `manual`, `gripDown`, `gripMove`, `gripEnd`, `gripCancel`, `portal`, `sheetKeys`, la feuille Filtres (dossier, tag, plage de dates liée, épinglées, favorites, bouton à compte en direct), pastilles amovibles et "Tout effacer", réordonnancement par pointer events avec poignée `GripVertical` et défilement automatique. `main` garde `draggable="true"` et `ondragstart` (`NoteLibrary.svelte:35`).
+- `d665efc` (2026-10-31) : `EncryptedBackup.svelte` en trois `setting-row` (phrase avec `reveal` et indication de longueur, export, restauration avec `fileInput` et `load`) ; `TaskList.svelte` gagne `openCount`, formulaire d'ajout d'abord, filtre segmenté Toutes / À faire / Terminées avec compteurs, recherche au-delà de 6 tâches, états vides par filtre ; retrait des sur-titres dans `Workspace.svelte` et `TemplateLibrary.svelte` ; règle "No Eyebrow" dans `DESIGN.md`.
+- Valeur : haute pour le réordonnancement tactile, la feuille Filtres et les états vides ; moyenne pour le reste ; coût moyen (déplacement de fichiers et réécritures de `c80dbb0`).
+
+### 12.7 Présent dans `mindspace-old`, absent de `mindspace-core` (perdu à la réécriture, pas supprimé)
+
+Vérifié par `git grep` sur les deux `HEAD`. Colonne valeur : estimation de la lecture de patchs, non documentée dans les repos. Raison commune : `mindspace-core/CLAUDE.md` rejette le "polissage d'enveloppe" sans hypothèse chiffrée et classe l'ancien éditeur comme "référence, jamais de copie".
+
+| ID | Fonction | Ajout dans `mindspace-old` | Fichiers | `mindspace-core` | Valeur / coût |
+|---|---|---|---|---|---|
+| L38 | Tâches locales (localStorage `mindspace-tasks-v1`, panneau, tâches dans la sauvegarde JSON) | `ccd468a`, `58db957` (PR #27, 2026-11-05) | `src/App.tsx`, `useStorageDiagnostics.ts`, `backupImport.ts` | Placeholder (L37), aucun code | Moyenne ; coût moyen : port vers Dexie obligatoire (la frontière des données interdit localStorage) |
+| L39 | Tableaux, alignement du texte, souligné | `876c7ea`, `04ddfe9` (PR #27) | `Editor.tsx` (`extension-table`), `EditorToolbar.tsx` (`insertTable`) | Barre de 7 outils : gras, italique, T1 à T3, liste à puces, liste ordonnée | Moyenne ; schéma de table à ajouter à `noteSchema` et à la validation de restauration |
+| L40 | Boutons Annuler / Rétablir et menu `/` | `90c4f82`, `fda9808` (PR #19, #21) | `App.tsx:511`, `SlashMenu.tsx` | `undoRedo: false`, historique Yjs au clavier seulement, aucun bouton | Moyenne sur tactile ; annuler faible, menu `/` plus coûteux |
+| L41 | Capture rapide sans titre, blocs rapides (actions à suivre, décision, point de réunion), modèles Réunion / Projet / Journal | `f51f14b` (PR #40), `0c1cb37` (#42), `e58529b`, `cce9ba1` (#38) | `QuickCapture.tsx`, `quickCapture.ts`, `editorQuickBlocks.ts`, `noteTemplates.ts` | Absent | Moyenne ; coût faible à moyen (nœuds Tiptap natifs) |
+| L42 | Export Markdown, export et import JSON avec aperçu, import TXT / MD | `ab5b8eb` (PR #32), `e83bbf3`, `143a272`, `c5b6753` | `markdownExport.ts`, `backupImport.ts` | Seule la sauvegarde chiffrée `.enc` | Haute (portabilité). L'import Markdown riche (M1, `markdownImport.ts` 180 lignes, `22d3a53`) est dans l'historique, `2672b09` et `14cfb52` |
+| L43 | Épingle, masquage, tags et filtre par tag, recherche des tags | `179146d` (PR #27), `b80869d` (#32), `d9f203e` (#45) | `db.ts`, `App.tsx`, `noteSearch.ts` | Recherche présente (`fold`) ; ni tags, ni épingle, ni masquage | Moyenne. Le champ `hidden` n'est pas du chiffrement (piège de `CLAUDE.md`) |
+| L44 | Pages Réglages (À propos, Aide, Confidentialité, Données, Apparence), thème clair / sombre / lilas, préférences de navigation iPad, journal des versions | PR #13 à #17, #23, #24, #36, #37, #27 | `src/pages/settings/*`, `appearance.ts`, `ChangelogTimeline.tsx` | Réglages : sauvegarde et restauration seulement. Thème : préférence du système | Faible à moyenne (règle "pas de polissage") |
+| L45 | Surfaces d'agents : WebMCP (`agentTools.ts`), `/mcp` en lecture seule (`server.mjs`), `llms.txt`, sitemap | PR #7, #8, #9 | `server.mjs`, `public/*` | Absent : SPA statique sans serveur | Faible tant que le Cloud / API n'existe pas ; contredit "aucune infrastructure serveur avant validation" |
+
+Changements récents de `mindspace-old` (branches mergées, non perdues) : PR #49 (`190b12d`, `02f698f`, `169d897`, 2026-11-10 et 11) : repli de `public/sw.js` vers `/index.html` sur une navigation en 5xx, effacement limité aux clés `mindspace-*` (au lieu de `localStorage.clear()`, `sessionStorage.clear()` et suppression de tous les caches) dans `useStorageDiagnostics.ts`, CI Chromium `stage1-storage-browser-ci.yml`. PR #50 (`752e6da`, `98fc56b`, `a3f1ee9`, `5563a98`, `b1d8966`, `4c964ff`) : bascule "maintenance" persistante, `visibleChangeCount`, entrée "Import Markdown enrichi (fonctionnalité retirée)" via `revertedBy: 44`, CI `changelog-browser-ci.yml`. Ces deux CI inversent en partie le retrait M4. Risque : si l'ancienne appli et `mindspace-core` partagent une origine, l'effacement des clés `mindspace-*` de l'ancienne appli supprime aussi le cache `mindspace-shell` de `mindspace-core` (les bases IndexedDB `mindspace-core*` diffèrent de `mindspace` et `mindspace-note-<id>`).
+
+### 12.8 Fonctions présentes seulement dans `notes-aistudio`
+
+- Jamais dans `notes-v3` : QR (génération et scan, `QrTools.tsx`, `qrcode`, `jsqr`), croquis (`Sketch.tsx`, image webp en pièce jointe), amélioration de scan de document (`enhanceDocument`, `ScanEnhance`, `cleanAndCompressImage`), métadonnées et entités (`metadata.ts`, `@mention`, statut, échéance, priorité), préférences d'apparence (OLED, échelle de police, densité, bordures, mouvement réduit, contraste élevé : `main.tsx:94-109`), profil local et avatar (`ProfileMenu`), `clearOfflineCache` et `requestStoragePersistence`.
+- Types sans implémentation (`5a430a7`) : `FlashcardType` (`qa`, `qcm`, `cloze`, `vocab`), `NoteStatus 'waiting'`, `location`, icônes quiz, vocab, lieu. Aucun usage de `qcm`, `cloze`, `vocab` dans `src` : échafaudage.
+- Le dépôt est une copie octet pour octet de `notes-v3` au commit `9021b9b` (hachages identiques pour `actions.ts`, `features.ts`, `List.tsx`, `Layers.tsx`, `Sheets.tsx`, `Dock.tsx`, `Tasks.tsx`, `config.ts`, `SettingsPage.tsx`).
+
+### 12.9 Pièges de `mindspace-core/CLAUDE.md` contre le code (`origin/main`)
+
+| Piège | État |
+|---|---|
+| BlockNote non restauré, lien Tiptap désactivé (`link: false`), `lastBackup` écrit et persistance demandée après le téléchargement, un seul chemin d'import, `fake-indexeddb/auto` en premier import (16 fichiers de test) | Respectés |
+| `y-indexeddb` sans erreur d'ouverture | **Non respecté** `[vérifié]` : `src/ui/useNoteDoc.ts:20` attend `provider.whenSynced.then(...)` sans `catch`, sans délai. `NoteEditor` reste sur "Chargement…" si IndexedDB est indisponible. `LoadBoundary` ne couvre que les imports de chunks refusés. `CLAUDE.md` le classe "À traiter avant la mise en production" |
+| Repli SPA | Respecté dans l'esprit : `.htaccess` et `src/sw.ts` utilisent une regex d'extension. Le routeur ne connaît que `/`, `/notes/<uuid>` et `/settings` ; `/settings/a-propos/versions` donne la liste |
+| Garde `syncSupported()` | Respectée à vide : aucun code de sync dans aucune référence |
+| CI navigateur | Texte périmé : `ci.yml` exécute `npm audit`, `npm test`, `npm run build` et `scripts/check-pwa-browser.mjs` (Playwright) sur chaque PR, alors que `CLAUDE.md` dit "toujours à ajouter" |
+| Import Markdown, logique `notes-v3` (sync, Ranger, rappels, i18n) | Non portés, conformément à la matrice |
+| Onglet Tâches | `main` garde le placeholder : voulu (décision 27, `mindspace-core#26` fermée sans fusion). La branche `...-no-tasks` est un résidu (L37) |
+
+### 12.10 Priorités proposées pour `mindspace-core` (vous arbitrez)
+
+| Rang | Éléments | Raison |
+|---|---|---|
+| 1 | Chemin d'erreur de `useNoteDoc` | Défaut connu, "à traiter avant la mise en production" |
+| 2 | Export / import Markdown (L42, M1) et retour de refus de `persist()` (L6) | Portabilité ; sauvegarde sans annonce de refus |
+| 3 | Tableaux et alignement, annuler / rétablir (L39, L40) | Éditeur tactile d'abord |
+| 4 | Capture rapide, blocs rapides, modèles (L41, L1, L2) | Capture en peu de gestes ; blocs Tiptap natifs |
+| 5 | Tâches locales : Tâches v1 de la décision 27 (L38 pour l'ancien code) | Décision réglée ; reste la validation de la spécification |
+| 6 | Widgets Recap : Souvenir, cartes dues (L25, A4), historique Retour / Avancer (L24) | Seulement avec les cartes de révision et les liens `[[ ]]` |
+| 7 | Bouton "Exporter avec les notes masquées" (L8) | Seulement avec le coffre |
+| 8 | Si `notes-v6` reste vivant : filtres en feuille, réordonnancement tactile, états vides, prénom optionnel (12.6) | Sinon archivage |
+| À ne pas restaurer | L4, L5, L12, L15, L16, L17, L18, L29, L31 | Choix voulus ou code mort |
+
+### 12.11 Non lu dans cette passe
+
+- Pages de PR GitHub : revues, commentaires, PR #2 et #19 de la seconde série de `notes-v3`, PR #3, #7, #9 et #11 de `mindspace-core` (sans commit de fusion dans git ; la #26, fermée sans fusion, est expliquée par `03` décision 27). `_notes-brain` lu seulement dans son état courant.
+- CSS et jeux d'icônes entre versions ; `tests/smoke.mjs` ; docs de `notes-aistudio`, `docs/*.md` ; bundles minifiés de `notes-site` comparés par chaînes seulement.
+- `notes-v3` : commits qui ne touchent que `tests/` ; texte complet des changements i18n de `e221230`.
+- `mindspace-old` : les 420 commits non-bot n'ont pas été lus un à un (liste des sujets, fichiers supprimés, filtre `numstat` d'au moins 40 lignes supprimées sous `src`, `scripts`, `public`, recherches `-S` ciblées).
+- `notes-v6` : fusion simulée des branches fantômes non faite.
+- `tiles`, `tiles-aistudio`, `adv7j.fr` : inventaire seulement, pas d'audit de commits supprimés. `F1-Data-JSON`, `fringles-git`, `txAdminRecipe` : non lus.
+
+## 13. Limites
 
 - Pas de lecture des lockfiles, pas d'exécution de l'app, pas de hash de build en ligne vérifié.
 - Les cases `?` sont des points non trouvés dans les docs lues, pas des absences prouvées.
