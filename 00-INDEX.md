@@ -13,6 +13,7 @@ Statuts utilisés partout : `shipped`, `experimental`, `described only`. Champ i
 | `03-TECH-CONVENTIONS.md` | Stack, architecture, nommage, CI, tests, sécurité, contraintes E2E + IA, gouvernance de dépôts, dette. | écrit |
 | `05-CHANGELOG.md` | Journal de session. | écrit |
 | `ledger/` | Registre de couverture : une ligne par commit de 10 dépôts (811 commits), statut lu / stat / bruit / build. Lire `ledger/README.md` d'abord. | écrit (2026-11-13) |
+| `design-system/` | Mémoire graphique de 9 dépôts : icônes (207 SVG), polices, rayons, couleurs, ombres, composants, dispositions, thèmes, décisions, avec ce qui a changé et ce qui a disparu. Lire `design-system/README.md` d'abord. | écrit (2026-11-14) |
 
 ## Lignée des itérations (ordre indicatif, déduit des dates de PR et de push)
 

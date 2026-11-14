@@ -1,0 +1,1 @@
+Aucun SVG en ligne ni fichier .svg dans mindspace-old : toutes les icones sont des composants lucide-react (voir ../icons.md). Les icones d'application sont des PNG (public/icons/icon-192.png, icon-512.png ; references git show dans icons.md).
