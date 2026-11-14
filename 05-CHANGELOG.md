@@ -293,3 +293,12 @@ Restent en attente d'arbitrage (inchangé) : visuels du sprint, recherche et sé
 - Méthode : script de classification (direct, PR, non fusionné, bot, build), six agents de lecture, contrôle automatique (sha présents, ordre, statuts), échantillons rejoués par l'orchestrateur.
 - Une erreur de classement corrigée en cours de route : les commits "Notes 26.10.x : …" de `notes-v3` sont des commits source et non des builds.
 - Reste à faire : archive du design système (`design-system/`, PR séparée).
+
+## 2026-11-14 : archive du design système
+
+- Demande du propriétaire : garder en mémoire tous les choix graphiques de toutes les versions (icônes, polices, rayons, couleurs, composants, etc.), sans répéter ce qui est identique, en disant ce qui a changé et en gardant ce qui a disparu.
+- Ajout de `design-system/` : 9 fichiers consolidés en matrices (une ligne par élément, une colonne par version E0 à E9), 207 SVG dédoublonnés, fichiers bruts par dépôt dans `by-repo/`, `LINEAGE.md`, `tools/`. Détail et limites : `design-system/README.md`.
+- Registre des commits (`ledger/`) mergé par le propriétaire (PR #22) : 811 commits, 10 dépôts.
+- Constats vérifiés pendant la consolidation : `--space-3` vaut 12 px dans `notes-v3` et `--ms-space-3` 16 px dans `mindspace-core` ; le libellé « Classique » de l'option Literata existe dans `notes-v3@4da62555` ; le contraste forcé est présent en E1, E4, E7, E8, E9 ; `DashboardOverview.svelte` (`notes-v6`) et `Recap` (`notes-v5`) subsistent comme code mort.
+- Écart de méthode : trois consolidations ont été interrompues par la limite d'usage de 5 heures et reprises ; rien n'a été perdu.
+- Non fait : relecture cellule par cellule des matrices ; suivi valeur par valeur des classes Tailwind de `mindspace-old`.
