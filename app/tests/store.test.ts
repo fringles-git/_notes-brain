@@ -5,7 +5,7 @@ import * as Y from 'yjs';
 import { db } from '../src/data/db.ts';
 import { addTask, createNote, emptyTrash, mergeNote, newDoc, purgeExpired, purgeNotes, reindex, restoreNote, setPinned, toggleTask, trashNote, TRASH_DAYS } from '../src/data/notes.ts';
 import { getPref } from '../src/data/prefs.ts';
-import { META, acquire, compact, metaOf, readDoc, release, withDoc } from '../src/data/store.ts';
+import { META, acquire, compact, metaOf, putIndex, readDoc, release, setWriteErrorHandler, withDoc } from '../src/data/store.ts';
 import { appendTree, FRAGMENT, readTree, type Node } from '../src/doc/tree.ts';
 
 const p = (text: string): Node => ({ type: 'paragraph', content: [{ type: 'text', text }] });
@@ -121,6 +121,43 @@ describe('a note is one document stored in the app database', () => {
     await compact(id);
     const bytes = new TextDecoder('latin1').decode((await db.docs.get(id))!.state);
     assert.ok(!bytes.includes('SECRETSUPPRIME'), 'Yjs garbage-collects deleted content: a backup of the state does not leak it');
+  });
+});
+
+describe('review findings', () => {
+  test('a failed write keeps its batch: flush does not mark the note clean, a later write stores everything', async () => {
+    const id = await createNote();
+    const s = await acquire(id);
+    const errors: unknown[] = [];
+    setWriteErrorHandler(e => errors.push(e));
+    const add = db.updates.add.bind(db.updates);
+    db.updates.add = (() => Promise.reject(new Error('QuotaExceededError'))) as never;
+    type(s.doc, 'jamais écrit ?');
+    await s.flush();
+    assert.ok(errors.length >= 1 && s.unsaved);
+    assert.equal((await db.notes.get(id))?.title, '', 'the index was not written from memory alone');
+    db.updates.add = add;
+    type(s.doc, 'seconde ligne');
+    await release(id);
+    setWriteErrorHandler(() => {});
+    assert.deepEqual(readTree((await readDoc(id))!).content?.map(n => n.content?.[0].text), ['jamais écrit ?', 'seconde ligne']);
+    assert.equal((await db.notes.get(id))?.title, 'jamais écrit ?');
+  });
+
+  test('the index is computed from storage: a tab behind another tab never writes an older row', async () => {
+    const id = await createNote(doc(p('base')));
+    const a = await acquire(id); // this tab
+    // Another tab stored an edit; its broadcast has not reached this tab yet.
+    const other = (await readDoc(id))!;
+    const before = Y.encodeStateVector(other);
+    appendTree(other, doc({ type: 'taskList', content: [{ type: 'taskItem', attrs: { checked: false }, content: [p('tâche de l’autre onglet')] }] }));
+    await db.updates.add({ id, update: Y.encodeStateAsUpdate(other, before) });
+    await putIndex(id);
+    type(a.doc, 'édition locale');
+    await a.flush();
+    assert.equal((await db.notes.get(id))?.open, 1, 'the other tab\'s task is still in the index');
+    assert.equal(await db.tasks.where('id').equals(id).count(), 1);
+    await release(id);
   });
 });
 

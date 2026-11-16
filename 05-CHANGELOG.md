@@ -302,3 +302,27 @@ Restent en attente d'arbitrage (inchangé) : visuels du sprint, recherche et sé
 - Constats vérifiés pendant la consolidation : `--space-3` vaut 12 px dans `notes-v3` et `--ms-space-3` 16 px dans `mindspace-core` ; le libellé « Classique » de l'option Literata existe dans `notes-v3@4da62555` ; le contraste forcé est présent en E1, E4, E7, E8, E9 ; `DashboardOverview.svelte` (`notes-v6`) et `Recap` (`notes-v5`) subsistent comme code mort.
 - Écart de méthode : trois consolidations ont été interrompues par la limite d'usage de 5 heures et reprises ; rien n'a été perdu.
 - Non fait : relecture cellule par cellule des matrices ; suivi valeur par valeur des classes Tailwind de `mindspace-old`.
+
+## 2026-11-16 : nouvelle PWA dans `app/` (session de construction, journal de reprise)
+
+Demande du propriétaire : construire la nouvelle PWA de notes à partir du cerveau, avec un package de réalisation. Branche `claude/eloquent-clarke-jq8v01`, PR `fringles-git/_notes-brain#24`. Cette entrée est mise à jour à chaque commit.
+
+Constats de départ
+- `_notes-brain` est déclaré **public** par `list_repos` (le brief le dit privé). Signalé au propriétaire. Aucun fichier de `mindspace-core` (privé) n'est copié dans `app/` ; `app/LICENSE` = All Rights Reserved.
+- `mindspace-core` lu en entier (clone en lecture seule, tête `0a520b5`) pour ne rien réécrire à l'identique et rester compatible (format `NOTESENC`, champ Yjs `default`).
+
+Pari d'architecture (écart assumé à la décision 6, détaillé dans `app/docs/`)
+- Une note = un Y.Doc (texte + ses métadonnées dans une `Y.Map`), stocké dans LA base Dexie de l'app (`docs` + `updates`), plus de base IndexedDB par note. Liste, recherche et tâches = caches reconstructibles.
+- Conséquences : plus de file de purge ni de balayage, erreur de lecture visible, corbeille 30 jours, tâches = cases des notes, restauration / import / sync = une seule fusion Yjs.
+
+Fait
+- `app/` : configuration (Vite 8 sans plugin, TS 7, Node 24), `src/doc/` (arbre, schéma, indexeur), `src/data/` (base, sessions, notes, recherche, réglages).
+- Revue Codex sur le premier commit, 2 constats valides corrigés avec tests : lot d'écriture conservé après un échec IndexedDB ; index calculé depuis le document stocké, dans la transaction.
+- 19 tests node verts (`npm test` dans `app/`, Node 24 : `/opt/node24/bin`).
+
+Reste à faire (ordre)
+1. Chiffrement `NOTESENC`, sauvegarde et restauration, import / export Markdown.
+2. Interface : éditeur Tiptap, liste, recherche, tâches, corbeille, réglages, thème.
+3. PWA : manifest, service worker natif, icônes, `build.json`, contrôles de build.
+4. Sync par dossier chiffrée (fusion Yjs).
+5. Scénarios navigateur, CI, package `app/docs/`.

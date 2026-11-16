@@ -40,12 +40,29 @@ export function rowsOf(id: string, doc: Y.Doc): { row: NoteRow; tokens: string[]
   return { row, tokens: index.tokens, tasks: index.tasks };
 }
 
-/** Writes the cache rows of a note. Skipped when the document is gone (deleted for good meanwhile): a cache never revives a note. */
-export async function putIndex(id: string, doc: Y.Doc): Promise<void> {
-  const { row, tokens, tasks } = rowsOf(id, doc);
+/** Applies what storage holds for a note. Inside a transaction over `docs` and `updates`, or alone. */
+async function stored(id: string): Promise<Y.Doc | null> {
+  const state = await db.docs.get(id);
+  const updates = await db.updates.where('id').equals(id).sortBy('seq');
+  if (!state && !updates.length) return null;
+  const doc = new Y.Doc({ guid: id });
+  doc.transact(() => {
+    if (state) Y.applyUpdate(doc, state.state);
+    for (const u of updates) Y.applyUpdate(doc, u.update);
+  }, LOAD);
+  return doc;
+}
+
+/** Writes the cache rows of a note, computed from the document AS STORED, read in the same transaction: a tab whose memory is
+    behind another tab's writes can never put an older index over a newer one, and a row marked clean always matches storage.
+    Skipped when the note is gone (deleted for good meanwhile): a cache never revives a note. */
+export async function putIndex(id: string): Promise<void> {
   await db.transaction('rw', [db.docs, db.updates, db.notes, db.words, db.tasks, db.tombstones], async () => {
     if (await db.tombstones.get(id)) return;
-    if (!(await db.docs.get(id)) && !(await db.updates.where('id').equals(id).count())) return;
+    const doc = await stored(id);
+    if (!doc) return;
+    const { row, tokens, tasks } = rowsOf(id, doc);
+    doc.destroy();
     await db.notes.put(row);
     await db.words.put({ id, tokens });
     await db.tasks.where('id').equals(id).delete();
@@ -58,19 +75,7 @@ export class NoteMissing extends Error {
 }
 
 /** Reads a note's document from storage, or null when there is none. Not a session: changes made to it are not saved. */
-export async function readDoc(id: string): Promise<Y.Doc | null> {
-  const [state, updates] = await db.transaction('r', db.docs, db.updates, async () => [
-    await db.docs.get(id),
-    await db.updates.where('id').equals(id).sortBy('seq'),
-  ] as const);
-  if (!state && !updates.length) return null;
-  const doc = new Y.Doc({ guid: id });
-  doc.transact(() => {
-    if (state) Y.applyUpdate(doc, state.state);
-    for (const u of updates) Y.applyUpdate(doc, u.update);
-  }, LOAD);
-  return doc;
-}
+export const readDoc = (id: string): Promise<Y.Doc | null> => db.transaction('r', db.docs, db.updates, () => stored(id));
 
 /** Folds the pending updates of a note into its stored state. Reads storage only, so an update written by another tab is never dropped. */
 export async function compact(id: string): Promise<void> {
@@ -152,14 +157,16 @@ export class Session {
     this.writing = this.writing
       .then(async () => {
         if (!this.queue.length) return;
-        const batch = this.queue.splice(0);
-        const update = batch.length === 1 ? batch[0] : Y.mergeUpdates(batch);
+        // The batch leaves the queue only once it is stored: a failed write keeps it for the next attempt.
+        const count = this.queue.length;
+        const update = count === 1 ? this.queue[0] : Y.mergeUpdates(this.queue.slice(0, count));
         await db.transaction('rw', db.updates, db.notes, db.tombstones, async () => {
           // Deleted for good while this write was waiting (another tab, the trash emptied): nothing is written back.
           if (await db.tombstones.get(this.id)) return;
           await db.updates.add({ id: this.id, update });
           if (!this.dirty) await db.notes.update(this.id, { dirty: 1 });
         });
+        this.queue.splice(0, count);
         this.dirty = true;
         this.written++;
       })
@@ -170,14 +177,23 @@ export class Session {
     if (!this.closed) Y.applyUpdate(this.doc, update, PEER);
   }
 
-  /** Everything typed is in storage and the list, search and task caches match it. */
+  /** True while some typed text could not be written to storage. */
+  get unsaved() { return this.queue.length > 0; }
+
+  /** Everything typed is in storage and the list, search and task caches match it (unless `unsaved`). */
   async flush(): Promise<void> {
     clearTimeout(this.timer);
     await this.writing;
+    if (this.queue.length) {
+      // A write failed: one more attempt. If it fails again nothing is marked clean, the text is still only in memory.
+      this.write();
+      await this.writing;
+      if (this.queue.length) return;
+    }
     if (!this.stale) return;
     this.stale = false;
     try {
-      await putIndex(this.id, this.doc);
+      await putIndex(this.id);
       this.dirty = false;
       this.stamped = false;
       if (this.written >= COMPACT_AFTER) {
@@ -192,6 +208,7 @@ export class Session {
 
   async close(): Promise<void> {
     await this.flush();
+    if (this.unsaved) onWriteError(new Error('unsaved text lost on close'));
     this.closed = true;
     if (this.written) await compact(this.id).catch(onWriteError);
     this.doc.destroy();

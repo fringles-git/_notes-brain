@@ -87,8 +87,8 @@ export async function reindex(): Promise<number> {
   for (const id of todo) {
     const doc = await readDoc(id);
     if (doc) {
-      await putIndex(id, doc);
       doc.destroy();
+      await putIndex(id);
     } else await db.transaction('rw', db.notes, db.words, db.tasks, async () => {
       await db.notes.delete(id);
       await db.words.delete(id);
