@@ -318,11 +318,13 @@ Pari d'architecture (écart assumé à la décision 6, détaillé dans `app/docs
 Fait
 - `app/` : configuration (Vite 8 sans plugin, TS 7, Node 24), `src/doc/` (arbre, schéma, indexeur), `src/data/` (base, sessions, notes, recherche, réglages).
 - Revue Codex sur le premier commit, 2 constats valides corrigés avec tests : lot d'écriture conservé après un échec IndexedDB ; index calculé depuis le document stocké, dans la transaction.
-- 19 tests node verts (`npm test` dans `app/`, Node 24 : `/opt/node24/bin`).
+- `src/crypto/notesenc.ts` : conteneur `NOTESENC` v1 et phrase de 28 signes, implémentation indépendante, compatible (vecteur `notes-v3` ouvert en local ; le fichier de test reste dans le dépôt privé).
+- `src/backup/` : sauvegarde `.enc` où chaque note voyage comme état Yjs ; restauration = fusion (aucune copie « restaurée ») ; lecture des sauvegardes `mindspace-core-backup` v1 (chemin de migration) ; phrase, adoption, rappel à 14 jours.
+- `src/io/markdown.ts` : export et import Markdown (listes imbriquées, tâches, tableaux, langage des blocs de code ; liens http(s) / mailto seulement).
+- 50 tests node verts (`npm test` dans `app/`, Node 24 : `/opt/node24/bin`).
 
 Reste à faire (ordre)
-1. Chiffrement `NOTESENC`, sauvegarde et restauration, import / export Markdown.
-2. Interface : éditeur Tiptap, liste, recherche, tâches, corbeille, réglages, thème.
-3. PWA : manifest, service worker natif, icônes, `build.json`, contrôles de build.
-4. Sync par dossier chiffrée (fusion Yjs).
-5. Scénarios navigateur, CI, package `app/docs/`.
+1. Interface : éditeur Tiptap, liste, recherche, tâches, corbeille, réglages, thème.
+2. PWA : manifest, service worker natif, icônes, `build.json`, contrôles de build.
+3. Sync par dossier chiffrée (fusion Yjs).
+4. Scénarios navigateur, CI, package `app/docs/`.

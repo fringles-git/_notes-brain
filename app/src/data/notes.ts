@@ -98,31 +98,34 @@ export async function reindex(): Promise<number> {
   return todo.size;
 }
 
+const equal = (a: Uint8Array, b: Uint8Array) => a.length === b.length && a.every((v, i) => v === b[i]);
+
+/** What merging `update` into the note `id` would do, without writing: add a note, change it, or nothing. */
+export async function compare(id: string, update: Uint8Array): Promise<'new' | 'changed' | 'same'> {
+  const local = await readDoc(id);
+  if (!local) return 'new';
+  const before = Y.encodeStateAsUpdate(local);
+  Y.applyUpdate(local, update);
+  const same = equal(before, Y.encodeStateAsUpdate(local));
+  local.destroy();
+  return same ? 'same' : 'changed';
+}
+
 /** Merges a document that came from outside (backup, import, sync) with the note of the same id, or adds it. Never overwrites: Yjs merges. */
 export async function mergeNote(id: string, update: Uint8Array): Promise<'added' | 'merged' | 'same'> {
-  const local = await readDoc(id);
-  if (!local) {
+  const what = await compare(id, update);
+  if (what === 'same') return 'same';
+  if (what === 'new') {
     const doc = new Y.Doc({ guid: id });
     Y.applyUpdate(doc, update);
     await addDoc(id, doc);
     doc.destroy();
     return 'added';
   }
-  // Nothing in `update` that this device does not already have: no write at all.
-  const missing = Y.diffUpdate(update, Y.encodeStateVector(local));
-  const probe = new Y.Doc();
-  Y.applyUpdate(probe, Y.encodeStateAsUpdate(local));
-  const before = Y.encodeStateAsUpdate(probe);
-  Y.applyUpdate(probe, missing);
-  const same = equal(before, Y.encodeStateAsUpdate(probe));
-  probe.destroy();
-  local.destroy();
-  if (same) return 'same';
   await withDoc(id, doc => Y.applyUpdate(doc, update, MERGE), MERGE);
   await compact(id);
   return 'merged';
 }
-const equal = (a: Uint8Array, b: Uint8Array) => a.length === b.length && a.every((v, i) => v === b[i]);
 
 /* ---------- Tasks: checklist items of the notes ---------- */
 
